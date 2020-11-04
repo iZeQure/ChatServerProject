@@ -6,6 +6,6 @@ namespace Majesty.Messages
 {
     interface IMessageFactory
     {
-        IMessage Create(IMessage message);
+        IMessage Create(string messageObject);
     }
 }

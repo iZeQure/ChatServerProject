@@ -6,11 +6,11 @@ namespace Majesty.Messages
 {
     class MessageFactory : IMessageFactory
     {
-        public IMessage Create(IMessage message)
+        public IMessage Create(string messageObject)
         {
-            return message switch
+            return messageObject switch
             {
-                UserMessage => new UserMessage(),
+                "UserMessage" => new UserMessage(),
                 _ => throw new NotSupportedException()
             };
         }

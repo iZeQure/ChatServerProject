@@ -1,15 +1,38 @@
 ﻿using Majesty.Messages;
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Majesty.Communication.Sockets
 {
     class SocketHandler : IConnectionHandler
     {
-        public SocketHandler()
-        {
+        private protected readonly Socket _socket;
 
+        public SocketHandler(Socket socket)
+        {
+            _socket = socket;
+
+            var buffer = new byte[2048];
+            string data = null;
+
+            while (true)
+            {
+                _socket.Accept();
+
+                _ = Task.Run(() =>
+                {
+                    while (true)
+                    {
+                        int bytesReceived = _socket.Receive(buffer);
+                        data += Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+                        if (data.IndexOf("<EOF>") > -1)
+                            break;
+                    }
+                });
+            }
         }
 
         public void ReceivedMessage(IMessage message)

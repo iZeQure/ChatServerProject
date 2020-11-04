@@ -8,12 +8,12 @@ namespace Majesty.Users
 {
     class SocketUser : IUser<IPEndPoint>
     {
-        private string _nickName;
-        private Colors _color;
-        private UserMessage _userMessage;
-        private bool _isConnected;
-        private IPEndPoint _destinationTo;
-        private IPEndPoint _destiantionFrom;
+        private readonly string _nickName;
+        private readonly Colors _color;
+        private readonly UserMessage _userMessage;
+        private readonly bool _isConnected;
+        private readonly IPEndPoint _destinationTo;
+        private readonly IPEndPoint _destiantionFrom;
 
         public string NickName => _nickName;
 

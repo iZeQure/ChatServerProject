@@ -6,14 +6,14 @@ namespace Majesty.Protocols
 {
     class ProtocolFactory : IProtocolFactory
     {
-        public IProtocol Create(IProtocol protocol)
+        public IProtocol Create(string protocolObject)
         {
-            return protocol switch
+            return protocolObject switch
             {
-                SimpleProtocol => new SimpleProtocol(),
-                XmlProtocol => new XmlProtocol(),
-                SymmetricProtocol => new SymmetricProtocol(),
-                AsymmetricProtocol => new AsymmetricProtocol(),
+                "SimpleProtocol" => new SimpleProtocol(),
+                "XmlProtocol" => new XmlProtocol(),
+                "SymmetricProtocol" => new SymmetricProtocol(),
+                "AsymmetricProtocol" => new AsymmetricProtocol(),
                 _ => throw new NotSupportedException()
             };
         }

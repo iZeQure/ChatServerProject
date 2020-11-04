@@ -6,6 +6,6 @@ namespace Majesty.Communication
 {
     interface IConnectionHandlerFactory
     {
-        IConnectionHandler Create(IConnectionHandler  connectionHandler);
+        IConnectionHandler Create(string  connectionHandlerObject);
     }
 }

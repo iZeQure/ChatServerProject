@@ -8,7 +8,7 @@ namespace Majesty.Messages
     {
         private byte[] _message;
 
-        public byte[] Message => _message;
+        public byte[] Message { get { return _message; } set { _message = value; } }
 
         public string UsersMessage { get; set; }
     }

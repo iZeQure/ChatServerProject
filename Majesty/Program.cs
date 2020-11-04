@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Majesty.Communication;
+using Majesty.Communication.Sockets;
+using Majesty.Messages;
+using Majesty.Protocols;
+using System;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
@@ -10,8 +14,7 @@ namespace Majesty
 {
     class Program
     {
-        // Incoming data from the client.  
-        public string data = null;
+        internal IProtocolFactory ProtocolFactory { get; } = new ProtocolFactory();
 
         static void Main(string[] args) =>
             new Program()
@@ -21,83 +24,59 @@ namespace Majesty
 
         private async Task StartServerAsync()
         {
-            new Thread(SimpleListener)
+            new Thread(SimpleListenerThread)
             {
                 Name = "Simple Protocol Thread"
             }.Start();
 
-            Console.WriteLine("Hello World!");
+            new Thread(XmlListenerThread)
+            {
+                Name = "XML Protocol Thread"
+            }.Start();
+
+            new Thread(SymmetricListenerThread)
+            {
+                Name = "Symmetric Protocol Thread"
+            }.Start();
+
+            new Thread(AsymmectricListenerThread)
+            {
+                Name = "Asymmetric Protocol Thread"
+            }.Start();
 
             await Task.Delay(-1);
         }
 
-        void SimpleListener()
+        private void SimpleListenerThread()
         {
-            // Data buffer for incoming data.  
-            byte[] bytes = new Byte[1024];
+            new SocketListener().Listen(
+                ProtocolFactory
+                .Create(
+                    "SimpleProtocol"));
+        }
 
-            // Establish the local endpoint for the socket.  
-            // Dns.GetHostName returns the name of the
-            // host running the application.  
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAddress = ipHostInfo.AddressList[0];
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
+        private void XmlListenerThread()
+        {
+            new SocketListener().Listen(
+                ProtocolFactory
+                .Create(
+                    "XmlProtocol"));
+        }
 
-            // Create a TCP/IP socket.  
-            Socket listener = new Socket(ipAddress.AddressFamily,
-                SocketType.Stream, ProtocolType.Tcp);
+        private void SymmetricListenerThread()
+        {
+            new SocketListener().Listen(
+                ProtocolFactory
+                .Create(
+                    "SymmetricProtocol"));
+        }
 
-            // Bind the socket to the local endpoint and
-            // listen for incoming connections.  
-            try
-            {
-                listener.Bind(localEndPoint);
-                listener.Listen(10);
-
-                // Start listening for connections.  
-                while (true)
-                {
-                    Console.WriteLine("Waiting for a connection...");
-                    // Program is suspended while waiting for an incoming connection.  
-                    Socket handler = listener.Accept();
-
-                    _ = Task.Run(() =>
-                    {
-                        Console.WriteLine("Connected");
-                        data = null;
-
-                        // An incoming connection needs to be processed.  
-                        while (true)
-                        {
-                            int bytesRec = handler.Receive(bytes);
-                            data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                            if (data.IndexOf("<EOF>") > -1)
-                            {
-                                break;
-                            }
-                        }
-
-                        // Show the data on the console.  
-                        Console.WriteLine("Text received : {0}", data);
-
-                        // Echo the data back to the client.  
-                        byte[] msg = Encoding.ASCII.GetBytes(data);
-
-                        handler.Send(msg);
-                        handler.Shutdown(SocketShutdown.Both);
-                        handler.Close();
-                    });
-                    Console.WriteLine("ASs hat");
-                }
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
+        private void AsymmectricListenerThread()
+        {
+            new SocketListener().Listen(
+                ProtocolFactory
+                .Create(
+                    "AsymmetricProtocol"));
         }
     }
 }

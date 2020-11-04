@@ -8,6 +8,6 @@ namespace Majesty.Communication.Sockets
 {
     interface ISocketListener : ICommunicationListener<IProtocol>
     {
-        bool Connect(IPEndPoint config);
+        bool Connect();
     }
 }
