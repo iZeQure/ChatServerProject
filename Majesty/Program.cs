@@ -1,12 +1,6 @@
-﻿using Majesty.Communication;
-using Majesty.Communication.Sockets;
-using Majesty.Messages;
+﻿using Majesty.Communication.Sockets;
 using Majesty.Protocols;
 using System;
-using System.Drawing;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,34 +43,62 @@ namespace Majesty
 
         private void SimpleListenerThread()
         {
-            new SocketListener().Listen(
-                ProtocolFactory
-                .Create(
-                    "SimpleProtocol"));
+            try
+            {
+                new SocketListener().Listen(
+                        ProtocolFactory
+                        .Create(
+                            "SimpleProtocol"));
+            }
+            catch (NotSupportedException)
+            {
+                Console.WriteLine($"Simple Protocol Thread : Failed Initialzing.");
+            }
         }
 
         private void XmlListenerThread()
         {
-            new SocketListener().Listen(
-                ProtocolFactory
-                .Create(
-                    "XmlProtocol"));
+            try
+            {
+                new SocketListener().Listen(
+                        ProtocolFactory
+                        .Create(
+                            "XmlProtocol"));
+            }
+            catch (NotSupportedException)
+            {
+                Console.WriteLine($"Xml Protocol Thread : Failed Initialzing.");
+            }
         }
 
         private void SymmetricListenerThread()
         {
-            new SocketListener().Listen(
-                ProtocolFactory
-                .Create(
-                    "SymmetricProtocol"));
+            try
+            {
+                new SocketListener().Listen(
+                        ProtocolFactory
+                        .Create(
+                            "SymmetricProtocol"));
+            }
+            catch (NotSupportedException)
+            {
+                Console.WriteLine($"Symmetric Protocol Thread : Failed Initialzing.");
+            }
         }
 
         private void AsymmectricListenerThread()
         {
-            new SocketListener().Listen(
-                ProtocolFactory
-                .Create(
-                    "AsymmetricProtocol"));
+            try
+            {
+                new SocketListener().Listen(
+                        ProtocolFactory
+                        .Create(
+                            "AsymmetricProtocol"));
+            }
+            catch (NotSupportedException)
+            {
+                Console.WriteLine($"Asymmetric Protocol Thread : Failed Initialzing.");
+            }
         }
     }
 }

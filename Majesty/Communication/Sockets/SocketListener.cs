@@ -1,13 +1,8 @@
-﻿using Majesty.Messages;
-using Majesty.Protocols;
-using Majesty.Users;
+﻿using Majesty.Protocols;
 using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security;
 
 namespace Majesty.Communication.Sockets
 {
@@ -29,8 +24,49 @@ namespace Majesty.Communication.Sockets
                         ipAddress.AddressFamily,
                         SocketType.Stream,
                         ProtocolType.Tcp);
-                listener.Bind(localEndPoint);
-                listener.Listen(10);
+                try
+                {
+                    listener.Bind(localEndPoint);
+                }
+                catch (ArgumentNullException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : LocalEndPoint was null.");
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : An error occurred when attempting to access the socket.");
+                }
+                catch (ObjectDisposedException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : Socket has been closed.");
+                }
+                catch (SecurityException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : A caller higher in the call stack does not have permission for the requested operation.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : Something blocked the socket bind.");
+                    return false;
+                }
+
+                try
+                {
+                    listener.Listen(10);
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : An error occurred when attempting to access the socket.");
+                }
+                catch (ObjectDisposedException)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception : Socket has been closed.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine($"Socket Listener Connect Exception");
+                    return false;
+                }
 
                 _socket = listener;
 
@@ -38,6 +74,7 @@ namespace Majesty.Communication.Sockets
             }
             catch (Exception)
             {
+                Console.WriteLine($"Socket Listener Connect Exception : Something went completely wrong.");
                 return false;
             }
         }
@@ -66,14 +103,41 @@ namespace Majesty.Communication.Sockets
             {
                 if (Connect())
                 {
-                    Socket newConnectionSocket  = _socket.Accept();
-                    _handlerFactory = new SocketHandlerFactory(newConnectionSocket);
-                    _handlerFactory.Create("SocketHandler");
+                    try
+                    {
+                        Socket newConnectionSocket = _socket.Accept();
+                        _handlerFactory = new SocketHandlerFactory(newConnectionSocket);
+
+                        try
+                        {
+                            _handlerFactory.Create("SocketHandler");
+                        }
+                        catch (NotSupportedException)
+                        {
+                            Console.WriteLine($"Socket Handler Factory : Failed Initializing.");
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        Console.WriteLine($"Socket Listener Exception : An error occurred when attempting to access the socket");
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        Console.WriteLine($"Socket Listener Exception : Socket has been closed.");
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        Console.WriteLine($"Socket Listener Exception : Socket is not listenening for connections.");
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine($"Socket Listener Exception : Something blocked the listener.");
+                    }
                 }
             }
             catch (Exception)
             {
-                throw;
+                Console.WriteLine($"Socket Listener Exception : Something went completely wrong.");
             }
         }
     }

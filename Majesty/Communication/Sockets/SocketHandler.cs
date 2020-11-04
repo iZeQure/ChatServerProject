@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,10 +25,34 @@ namespace Majesty.Communication.Sockets
                 {
                     while (true)
                     {
-                        int bytesReceived = _socket.Receive(buffer);
-                        data += Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-                        if (data.IndexOf("<EOF>") > -1)
-                            break;
+                        try
+                        {
+                            int bytesReceived = _socket.Receive(buffer);
+
+                            data += Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+                            if (data.IndexOf("<EOF>") > -1)
+                                break;
+                        }
+                        catch (ArgumentNullException)
+                        {
+                            Console.WriteLine($"SocketHandler Exception : Buffer was empty.");
+                        }
+                        catch (SocketException)
+                        {
+                            Console.WriteLine($"SocketHandler Exception : Error occurred when attempting to access the socket.");
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            Console.WriteLine($"SocketHandler Exception : Socket has been closed.");
+                        }
+                        catch (SecurityException)
+                        {
+                            Console.WriteLine($"SocketHandler Exception : A caller in the call stack does not have the required permissions.");
+                        }
+                        catch (Exception)
+                        {
+                            throw;
+                        }
                     }
 
                     Console.WriteLine($"Message Received : {data}");
