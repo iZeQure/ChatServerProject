@@ -66,7 +66,8 @@ namespace Majesty.Communication.Sockets
             {
                 if (Connect())
                 {
-                    _handlerFactory = new SocketHandlerFactory(_socket);
+                    Socket newConnectionSocket  = _socket.Accept();
+                    _handlerFactory = new SocketHandlerFactory(newConnectionSocket);
                     _handlerFactory.Create("SocketHandler");
                 }
             }

@@ -20,8 +20,6 @@ namespace Majesty.Communication.Sockets
 
             while (true)
             {
-                _socket.Accept();
-
                 _ = Task.Run(() =>
                 {
                     while (true)
