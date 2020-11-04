@@ -31,6 +31,8 @@ namespace Majesty.Communication.Sockets
                         if (data.IndexOf("<EOF>") > -1)
                             break;
                     }
+
+                    Console.WriteLine($"Message Received : {data}");
                 });
             }
         }
