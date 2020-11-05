@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Majesty.Users
 {
-    enum Colors
+    public enum Colors
     {
         Hot_Pink = 0,
         Lime = 1,
