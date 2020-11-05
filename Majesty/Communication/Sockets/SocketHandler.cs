@@ -1,72 +1,111 @@
 ﻿using Majesty.Messages;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Majesty.Protocols;
+using Majesty.Users;
 
 namespace Majesty.Communication.Sockets
 {
     class SocketHandler : IConnectionHandler
     {
         private protected readonly Socket _socket;
+        private protected readonly IProtocol _protocol;
+        private protected IList<IUserBase> _usersConnected = new List<IUserBase>();
 
-        public SocketHandler(Socket socket)
+        public IEnumerable<IUserBase> UsersConnected => _usersConnected;
+        private protected IUserBaseFactory UserBaseFactory { get; } = new UserFactory();
+
+        public SocketHandler(Socket socket, IProtocol protocol)
         {
+            
             _socket = socket;
+            _protocol = protocol;
 
-            var buffer = new byte[2048];
-            string data = null;
-
-            while (true)
+            _ = Task.Run(() =>
             {
-                _ = Task.Run(() =>
+                var buffer = new byte[2048];
+                string data = null;
+                bool isConnected = true;
+                int bytesReceived = 0;
+
+                
+                while (isConnected)
                 {
-                    while (true)
+                    bool isReading = true;
+                    while (isReading)
                     {
                         try
                         {
-                            int bytesReceived = _socket.Receive(buffer);
+                            bytesReceived = _socket.Receive(buffer);
 
-                            data += Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-                            if (data.IndexOf("<EOF>") > -1)
-                                break;
+                            data += Encoding.UTF8.GetString(buffer, 0, bytesReceived);
+                            if (bytesReceived == 0)
+                            {
+                                // Client disconnect
+                                Console.WriteLine("Client disconnected");
+                                isConnected = false;
+                                isReading = false;
+                                //throw new Exception("Client disconnected");
+                            }
+                            else
+                            {
+                                isReading = !(data.IndexOf("%END%") > -1);
+                            }
+
                         }
+                        // TODO All exceptions must remove user from users connected list
                         catch (ArgumentNullException argNullE)
                         {
-                            //Console.WriteLine($"SocketHandler Exception : Buffer was empty.");
+                            Console.WriteLine($"SocketHandler Exception : Buffer was empty.");
                             throw argNullE;
                         }
                         catch (SocketException socE)
                         {
-                            //Console.WriteLine($"SocketHandler Exception : Error occurred when attempting to access the socket.");
+                            Console.WriteLine(
+                                $"SocketHandler Exception : Error occurred when attempting to access the socket.");
                             throw socE;
                         }
                         catch (ObjectDisposedException objDisE)
                         {
-                            //Console.WriteLine($"SocketHandler Exception : Socket has been closed.");
+                            Console.WriteLine($"SocketHandler Exception : Socket has been closed.");
                             throw objDisE;
                         }
                         catch (SecurityException secE)
                         {
-                            //Console.WriteLine($"SocketHandler Exception : A caller in the call stack does not have the required permissions.");
+                            Console.WriteLine(
+                                $"SocketHandler Exception : A caller in the call stack does not have the required permissions.");
                             throw secE;
                         }
                         catch (Exception e)
                         {
-                            throw e;
+                            Console.WriteLine(e);
+                            //throw e;
                         }
                     }
 
-                    Console.WriteLine($"Message Received : {data}");
-                });
-            }
+                    if (bytesReceived > 0)
+                    {
+                        var convemrtedData = _protocol.ProtocolConvertMessage(Encoding.UTF8.GetBytes(data));
+                        var socketUser = UserBaseFactory.Create("SocketUser") as SocketUser;
+                        socketUser.NickName = "ASS";
+                        Console.WriteLine($"Message received data: {data} length: {bytesReceived}");
+                        buffer = new byte[2048];
+                        data = null;
+                    }
+
+                }
+            });
         }
 
         public void ReceivedMessage(IMessage message)
         {
             throw new NotImplementedException();
         }
+
 
         public void SendMessage(IMessage message)
         {

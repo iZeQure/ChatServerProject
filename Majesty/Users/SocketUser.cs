@@ -6,23 +6,47 @@ namespace Majesty.Users
 {
     class SocketUser : IUser<IPEndPoint>
     {
-        private readonly string _nickName;
-        private readonly Colors _color;
-        private readonly UserMessage _userMessage;
-        private readonly bool _isConnected;
-        private readonly IPEndPoint _destinationTo;
-        private readonly IPEndPoint _destiantionFrom;
+        private string _nickName;
+        private Colors _color;
+        private UserMessage _userMessage;
+        private bool _isConnected;
+        private IPEndPoint _destinationTo;
+        private IPEndPoint _destinationFrom;
+        
+        public string NickName
+        {
+            get => _nickName;
+            set => _nickName = value;
+        }
 
-        public string NickName => _nickName;
+        public Colors Color
+        {
+            get => _color;
+            set => _color = value;
+        }
 
-        public Colors Color => _color;
+        public UserMessage UserMessage
+        {
+            get => _userMessage;
+            set => _userMessage = value;
+        }
 
-        public UserMessage UserMessage => _userMessage;
+        public bool IsConnected
+        {
+            get => _isConnected;
+            set => _isConnected = value;
+        }
 
-        public bool IsConnected => _isConnected;
+        public IPEndPoint DestinationTo
+        {
+            get => _destinationTo;
+            set => _destinationTo = value;
+        }
 
-        public IPEndPoint DestinationTo => _destinationTo;
-
-        public IPEndPoint DestinationFrom => _destiantionFrom;
+        public IPEndPoint DestinationFrom
+        {
+            get => _destinationFrom;
+            set => _destinationFrom = value;
+        }
     }
 }

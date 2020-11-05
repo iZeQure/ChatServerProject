@@ -110,42 +110,45 @@ namespace Majesty.Communication.Sockets
 
             try
             {
-                if (Connect())
+                if(Connect())
                 {
-                    try
+                    while (true)
                     {
-                        Socket newConnectionSocket = _socket.Accept();
-                        _handlerFactory = new SocketHandlerFactory(newConnectionSocket);
-
                         try
                         {
-                            _handlerFactory.Create("SocketHandler");
+                            Socket newConnectionSocket = _socket.Accept();
+                            _handlerFactory = new SocketHandlerFactory(newConnectionSocket, protocol);
+
+                            try
+                            {
+                                _handlerFactory.Create("SocketHandler");
+                            }
+                            catch (NotSupportedException notSuppE)
+                            {
+                                //Console.WriteLine($"Socket Handler Factory : Failed Initializing.");
+                                throw notSuppE;
+                            }
                         }
-                        catch (NotSupportedException notSuppE)
+                        catch (SocketException se)
                         {
-                            //Console.WriteLine($"Socket Handler Factory : Failed Initializing.");
-                            throw notSuppE;
+                            throw se;
+                            //Console.WriteLine($"Socket Listener Exception : An error occurred when attempting to access the socket");
                         }
-                    }
-                    catch (SocketException se)
-                    {
-                        throw se;
-                        //Console.WriteLine($"Socket Listener Exception : An error occurred when attempting to access the socket");
-                    }
-                    catch (ObjectDisposedException objDisE)
-                    {
-                        throw objDisE;
-                        //Console.WriteLine($"Socket Listener Exception : Socket has been closed.");
-                    }
-                    catch (InvalidOperationException invOpeE)
-                    {
-                        throw invOpeE;
-                        //Console.WriteLine($"Socket Listener Exception : Socket is not listenening for connections.");
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
-                        //Console.WriteLine($"Socket Listener Exception : Something blocked the listener.");
+                        catch (ObjectDisposedException objDisE)
+                        {
+                            throw objDisE;
+                            //Console.WriteLine($"Socket Listener Exception : Socket has been closed.");
+                        }
+                        catch (InvalidOperationException invOpeE)
+                        {
+                            throw invOpeE;
+                            //Console.WriteLine($"Socket Listener Exception : Socket is not listenening for connections.");
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                            //Console.WriteLine($"Socket Listener Exception : Something blocked the listener.");
+                        }
                     }
                 }
             }
