@@ -1,5 +1,6 @@
 ﻿using Majesty.Communication.Sockets;
 using Majesty.Protocols;
+using Majesty.UI;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace Majesty
     class Program
     {
         internal IProtocolFactory ProtocolFactory { get; } = new ProtocolFactory();
+        internal INotifyUIFactory NotifyUIFactory { get; } = new NotifyUIFactory();
 
         static void Main(string[] args) =>
             new Program()
@@ -18,25 +20,32 @@ namespace Majesty
 
         private async Task StartServerAsync()
         {
-            new Thread(SimpleListenerThread)
+            try
             {
-                Name = "Simple Protocol Thread"
-            }.Start();
+                new Thread(SimpleListenerThread)
+                {
+                    Name = "Simple Protocol Thread"
+                }.Start();
 
-            new Thread(XmlListenerThread)
-            {
-                Name = "XML Protocol Thread"
-            }.Start();
+                new Thread(XmlListenerThread)
+                {
+                    Name = "XML Protocol Thread"
+                }.Start();
 
-            new Thread(SymmetricListenerThread)
-            {
-                Name = "Symmetric Protocol Thread"
-            }.Start();
+                new Thread(SymmetricListenerThread)
+                {
+                    Name = "Symmetric Protocol Thread"
+                }.Start();
 
-            new Thread(AsymmectricListenerThread)
+                new Thread(AsymmectricListenerThread)
+                {
+                    Name = "Asymmetric Protocol Thread"
+                }.Start();
+            }
+            catch (Exception e)
             {
-                Name = "Asymmetric Protocol Thread"
-            }.Start();
+                Console.WriteLine(e.Message);
+            }
 
             await Task.Delay(-1);
         }
@@ -48,11 +57,16 @@ namespace Majesty
                 new SocketListener().Listen(
                         ProtocolFactory
                         .Create(
-                            "SimpleProtocol"));
+                            "SimpleProtocol2"));
             }
             catch (NotSupportedException)
             {
-                Console.WriteLine($"Simple Protocol Thread : Failed Initialzing.");
+                NotifyUIFactory
+                    .Create("ConsoleNotification")
+                    .SendMessageToUi(
+                        "Simple Protocol Thread : Failed Initialzing.",
+                        LogLevels.Critical,
+                        Colors.Crimson);
             }
         }
 
@@ -67,7 +81,12 @@ namespace Majesty
             }
             catch (NotSupportedException)
             {
-                Console.WriteLine($"Xml Protocol Thread : Failed Initialzing.");
+                NotifyUIFactory
+                    .Create("ConsoleNotification")
+                    .SendMessageToUi(
+                        "Xml Protocol Thread : Failed Initialzing.",
+                        LogLevels.Critical,
+                        Colors.Crimson);
             }
         }
 
@@ -82,7 +101,12 @@ namespace Majesty
             }
             catch (NotSupportedException)
             {
-                Console.WriteLine($"Symmetric Protocol Thread : Failed Initialzing.");
+                NotifyUIFactory
+                    .Create("ConsoleNotification")
+                    .SendMessageToUi(
+                        "Symmetric Protocol Thread : Failed Initialzing.",
+                        LogLevels.Critical,
+                        Colors.Crimson);
             }
         }
 
@@ -97,7 +121,12 @@ namespace Majesty
             }
             catch (NotSupportedException)
             {
-                Console.WriteLine($"Asymmetric Protocol Thread : Failed Initialzing.");
+                NotifyUIFactory
+                    .Create("ConsoleNotification")
+                    .SendMessageToUi(
+                        "Asymmetric Protocol Thread : Failed Initialzing.",
+                        LogLevels.Critical,
+                        Colors.Crimson);
             }
         }
     }

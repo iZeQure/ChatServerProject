@@ -1,8 +1,7 @@
-﻿using Majesty.Communication.Sockets;
-using System;
+﻿using System;
 using System.Net.Sockets;
 
-namespace Majesty.Communication
+namespace Majesty.Communication.Sockets
 {
     class SocketHandlerFactory : IConnectionHandlerFactory
     {

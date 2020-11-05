@@ -32,25 +32,29 @@ namespace Majesty.Communication.Sockets
                             if (data.IndexOf("<EOF>") > -1)
                                 break;
                         }
-                        catch (ArgumentNullException)
+                        catch (ArgumentNullException argNullE)
                         {
-                            Console.WriteLine($"SocketHandler Exception : Buffer was empty.");
+                            //Console.WriteLine($"SocketHandler Exception : Buffer was empty.");
+                            throw argNullE;
                         }
-                        catch (SocketException)
+                        catch (SocketException socE)
                         {
-                            Console.WriteLine($"SocketHandler Exception : Error occurred when attempting to access the socket.");
+                            //Console.WriteLine($"SocketHandler Exception : Error occurred when attempting to access the socket.");
+                            throw socE;
                         }
-                        catch (ObjectDisposedException)
+                        catch (ObjectDisposedException objDisE)
                         {
-                            Console.WriteLine($"SocketHandler Exception : Socket has been closed.");
+                            //Console.WriteLine($"SocketHandler Exception : Socket has been closed.");
+                            throw objDisE;
                         }
-                        catch (SecurityException)
+                        catch (SecurityException secE)
                         {
-                            Console.WriteLine($"SocketHandler Exception : A caller in the call stack does not have the required permissions.");
+                            //Console.WriteLine($"SocketHandler Exception : A caller in the call stack does not have the required permissions.");
+                            throw secE;
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
-                            throw;
+                            throw e;
                         }
                     }
 

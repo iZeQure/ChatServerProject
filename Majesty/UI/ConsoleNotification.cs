@@ -43,7 +43,7 @@ namespace Majesty.UI
             }
 
             Console.ForegroundColor = consoleForgroundColor;
-            Console.WriteLine($"{logLevels}: {message}");
+            Console.WriteLine($"{$"[{logLevels}]:", -10} {message}");
             Console.ResetColor();
         }
     }

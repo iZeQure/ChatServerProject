@@ -117,9 +117,10 @@ namespace Majesty.Communication.Sockets
                             Console.WriteLine($"Socket Handler Factory : Failed Initializing.");
                         }
                     }
-                    catch (SocketException)
+                    catch (SocketException se)
                     {
-                        Console.WriteLine($"Socket Listener Exception : An error occurred when attempting to access the socket");
+                        throw se;
+                        //Console.WriteLine($"Socket Listener Exception : An error occurred when attempting to access the socket");
                     }
                     catch (ObjectDisposedException)
                     {
