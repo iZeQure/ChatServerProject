@@ -57,7 +57,7 @@ namespace Majesty
                 new SocketListener().Listen(
                         ProtocolFactory
                         .Create(
-                            "SimpleProtocol2"));
+                            "SimpleProtocol"));
             }
             catch (NotSupportedException)
             {
