@@ -12,8 +12,21 @@ namespace Majesty.UI
         Warning = 6
     }
     
+    public enum Colors
+    {
+        Hot_Pink = 0,
+        Lime = 1,
+        Goldenrod = 2,
+        Tomato = 3,
+        Medium_Orchid = 4,
+        Aquamarine = 5,
+        Alice_Blue = 6,
+        Dark_Salmon = 7,
+        Crimson = 8
+    }
+    
     public interface INotifyUI
     {
-        public void SendMessageToUI(string message, LogLevels logLevels, Colors colors);
+        public void SendMessageToUi(string message, LogLevels logLevels, Colors colors);
     }
 }

@@ -1,8 +1,6 @@
 ﻿using Majesty.Messages;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
+using Majesty.UI;
 
 namespace Majesty.Users
 {

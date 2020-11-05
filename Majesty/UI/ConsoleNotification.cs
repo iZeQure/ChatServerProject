@@ -1,11 +1,10 @@
 using System;
-using Majesty.Users;
 
 namespace Majesty.UI
 {
     public class ConsoleNotification : INotifyUI
     {
-        public void SendMessageToUI(string message, LogLevels logLevels, Colors colors)
+        public void SendMessageToUi(string message, LogLevels logLevels, Colors colors)
         {
             ConsoleColor consoleForgroundColor = ConsoleColor.White;
 
@@ -37,6 +36,9 @@ namespace Majesty.UI
                     break;
                 case Colors.Crimson:
                     consoleForgroundColor = ConsoleColor.DarkRed;
+                    break;
+                default:
+                    consoleForgroundColor = ConsoleColor.White;
                     break;
             }
 
