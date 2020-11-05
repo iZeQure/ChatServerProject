@@ -10,6 +10,8 @@ namespace Majesty.Users
         private Colors _color;
         private UserMessage _userMessage;
         private bool _isConnected;
+        private string _senderHostname;
+        private string _receiverHostname;
         private IPEndPoint _destinationTo;
         private IPEndPoint _destinationFrom;
         
@@ -35,6 +37,18 @@ namespace Majesty.Users
         {
             get => _isConnected;
             set => _isConnected = value;
+        }
+
+        public string SenderHostname
+        {
+            get => _senderHostname;
+            set => _senderHostname = value;
+        }
+
+        public string ReceiverHostname
+        {
+            get => _receiverHostname;
+            set => _receiverHostname = value;
         }
 
         public IPEndPoint DestinationTo

@@ -9,5 +9,7 @@ namespace Majesty.Users
         Colors Color { get; }
         UserMessage UserMessage { get; }
         bool IsConnected { get; }
+        string SenderHostname { get; }
+        string ReceiverHostname { get; }
     }
 }
