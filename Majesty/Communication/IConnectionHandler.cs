@@ -11,7 +11,7 @@ namespace Majesty.Communication
     {
         IEnumerable<IUserBase> UsersConnected { get; }
         
-        void SendMessage(IPackage package);
-        void ReceivedMessage(IPackage package);
+        void SendPackage(IPackage package);
+        void ReceivedPackage(byte[] packageBytes);
     }
 }

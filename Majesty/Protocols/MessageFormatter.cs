@@ -10,9 +10,8 @@ namespace Majesty.Protocols
     {
         private readonly IUserBaseFactory _userFactory = new UserFactory();
         private readonly IPackageFactory _packageFactory = new PackageFactory();
-
-
-        public IUserBase FormatMessage(byte[] messageBytes)
+        
+        public IUserBase FormatMessage(IPackage package)
         {
             /*
             Format
@@ -31,7 +30,7 @@ namespace Majesty.Protocols
             // Set the user.UserMessage.Message to the original message for when we forward the message
             try
             {
-                user.UserPackage.PackageBytes = messageBytes;
+                user.UserPackage = (UserPackage) package;
             }
             catch (Exception e)
             {
@@ -39,7 +38,7 @@ namespace Majesty.Protocols
                 throw;
             }
             // Split the message so we get the fields in the message
-            string[] messageFields = Encoding.UTF8.GetString(messageBytes).Split(":");
+            string[] messageFields = Encoding.UTF8.GetString(user.UserPackage.PackageBytes).Split(":");
             user.NickName = messageFields[0];
             user.SenderHostname = messageFields[1];
             user.DestinationFrom = IPEndPoint.Parse(messageFields[2]);

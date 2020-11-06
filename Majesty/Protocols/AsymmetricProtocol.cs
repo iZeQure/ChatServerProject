@@ -29,7 +29,7 @@ namespace Majesty.Protocols
             throw new NotImplementedException();
         }
 
-        public IUserBase ProtocolConvertMessage(byte[] messageBytes)
+        public IUserBase ProtocolConvertMessage(IPackage package)
         {
             throw new NotImplementedException();
         }

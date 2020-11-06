@@ -6,6 +6,6 @@ namespace Majesty.Protocols
 {
     interface IProtocol
     {
-        IUserBase ProtocolConvertMessage(byte[] messageBytes);
+        IUserBase ProtocolConvertMessage(IPackage package);
     }
 }

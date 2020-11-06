@@ -19,6 +19,8 @@ namespace Majesty.Communication.Sockets
 
         public IEnumerable<IUserBase> UsersConnected => _usersConnected;
         private protected IUserBaseFactory UserBaseFactory { get; } = new UserFactory();
+        private protected IPackageFactory PackageFactory { get; } = new PackageFactory();
+
 
         public SocketHandler(Socket socket, IProtocol protocol)
         {
@@ -91,23 +93,24 @@ namespace Majesty.Communication.Sockets
 
                     if (bytesReceived > 0)
                     {
-                        var djdjd = Encoding.UTF8.GetBytes(data);
-                        var convertedData = _protocol.ProtocolConvertMessage(djdjd) as SocketUser;
-                        _usersConnected.Add(convertedData);
-                        Console.WriteLine($"{protocol.GetType().Name} listener received: {convertedData}");
+                        ReceivedPackage(Encoding.UTF8.GetBytes(data));
                     }
 
                 }
             });
         }
 
-        public void ReceivedMessage(IPackage package)
+        public void ReceivedPackage(byte[] packageBytes)
         {
-            throw new NotImplementedException();
+            var package = PackageFactory.Create("UserPackage") as UserPackage;
+            package.PackageBytes = packageBytes;
+            var convertedData = _protocol.ProtocolConvertMessage(package) as SocketUser;
+            _usersConnected.Add(convertedData);
+            Console.WriteLine($"{_protocol.GetType().Name} listener received: {convertedData}");
         }
 
 
-        public void SendMessage(IPackage package)
+        public void SendPackage(IPackage package)
         {
             throw new NotImplementedException();
         }

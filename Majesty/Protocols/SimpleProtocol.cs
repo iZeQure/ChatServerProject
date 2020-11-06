@@ -13,10 +13,10 @@ namespace Majesty.Protocols
             throw new NotImplementedException();
         }
 
-        public IUserBase ProtocolConvertMessage(byte[] messageBytes)
+        public IUserBase ProtocolConvertMessage(IPackage package)
         {
             MessageFormatter messageFormatter = new MessageFormatter();
-            return messageFormatter.FormatMessage(messageBytes);
+            return messageFormatter.FormatMessage(package);
         }
     }
 }
