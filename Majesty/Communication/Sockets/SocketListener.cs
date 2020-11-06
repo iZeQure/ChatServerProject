@@ -1,8 +1,13 @@
 ﻿using Majesty.Protocols;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security;
+using System.Threading;
+using System.Threading.Tasks;
+using Majesty.Users;
 
 namespace Majesty.Communication.Sockets
 {
@@ -11,15 +16,18 @@ namespace Majesty.Communication.Sockets
         private protected Socket _socket;
         private protected int _protocolPort;
         private protected IConnectionHandlerFactory _handlerFactory;
+        private List<String> hej = new List<string>();
 
-        public bool Connect()
+        public bool BindSocket()
         {
             try
             {
                 IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAddress = ipHostInfo.AddressList[0];
-                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, _protocolPort);
-
+                //IPEndPoint localEndPoint = new IPEndPoint(ipAddress, _protocolPort); // Get from hostname
+                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Parse("172.16.21.35"), _protocolPort); // Static
+                
+                
                 Socket listener = new Socket(
                         ipAddress.AddressFamily,
                         SocketType.Stream,
@@ -88,29 +96,27 @@ namespace Majesty.Communication.Sockets
             }
         }
 
-        public void Listen(IProtocol protocol)
+        public Task NewClientConnection()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async void Listen(IProtocol protocol)
         {
             Console.WriteLine($"Started listening on {protocol.GetType().Name.ToUpper()}.");
 
-            switch (protocol)
+            _protocolPort = protocol switch
             {
-                case SimpleProtocol:
-                    _protocolPort = 50001;
-                    break;
-                case XmlProtocol:
-                    _protocolPort = 50002;
-                    break;
-                case SymmetricProtocol:
-                    _protocolPort = 50003;
-                    break;
-                case AsymmetricProtocol:
-                    _protocolPort = 50004;
-                    break;
-            }
+                SimpleProtocol => 50001,
+                XmlProtocol => 50002,
+                SymmetricProtocol => 50003,
+                AsymmetricProtocol => 50004,
+                _ => _protocolPort
+            };
 
             try
             {
-                if(Connect())
+                if(BindSocket())
                 {
                     while (true)
                     {
@@ -121,7 +127,8 @@ namespace Majesty.Communication.Sockets
 
                             try
                             {
-                                _handlerFactory.Create("SocketHandler");
+                                var socketHandler = _handlerFactory.Create("SocketHandler");
+                                await socketHandler.HandleConnection();
                             }
                             catch (NotSupportedException notSuppE)
                             {
@@ -158,5 +165,23 @@ namespace Majesty.Communication.Sockets
                 //Console.WriteLine($"Socket Listener Exception : Something went completely wrong.");
             }
         }
+        /*public Task NewClientConnection()
+        {
+            if (!((List<SocketUser>) _socketUsersConnected).Any(u =>
+                u.DestinationFrom == (IPEndPoint) _socket.RemoteEndPoint))
+            {
+                Console.WriteLine($"Client connected {((IPEndPoint) _socket.RemoteEndPoint).Address}");
+                var newUser = UserBaseFactory.Create("SocketUser") as SocketUser;
+                newUser.DestinationFrom = (IPEndPoint) _socket.RemoteEndPoint;
+                _socketUsersConnected.Add(newUser);
+                Console.WriteLine("a");
+            }
+            else
+            {
+                Console.WriteLine("Client already connected");
+            }
+
+            return Task.CompletedTask;
+        }*/
     }
 }

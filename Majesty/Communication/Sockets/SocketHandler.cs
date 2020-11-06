@@ -1,9 +1,12 @@
 ﻿using Majesty.Packages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Majesty.Protocols;
 using Majesty.UI;
@@ -13,32 +16,42 @@ namespace Majesty.Communication.Sockets
 {
     class SocketHandler : IConnectionHandler
     {
+        static private protected IList<SocketUser> _socketUsersConnected = new List<SocketUser>();
         private protected readonly Socket _socket;
         private protected readonly IProtocol _protocol;
-        private protected IList<IUserBase> _usersConnected = new List<IUserBase>();
+        private protected readonly List<String> _hej;
 
-        public IEnumerable<IUserBase> UsersConnected => _usersConnected;
-        private protected IUserBaseFactory UserBaseFactory { get; } = new UserFactory();
+        public IEnumerable<IUserBase> UsersConnected
+        {
+            get
+            {
+                return (List<IUserBase>) _socketUsersConnected;
+            }
+        }
         private protected IPackageFactory PackageFactory { get; } = new PackageFactory();
 
 
-        public SocketHandler(Socket socket, IProtocol protocol)
+        public SocketHandler(Socket socket, IProtocol protocol, List<String> hej)
         {
-            Console.WriteLine("Connected");   
             _socket = socket;
             _protocol = protocol;
+            _hej = hej;
+        }
 
-            _ = Task.Run(() =>
+        public Task HandleConnection()
+        {
+            Random random = new Random();
+            _ = Task.Run(async () =>
             {
+
                 bool isConnected = true;
                 int bytesReceived = 0;
 
-                
                 while (isConnected)
                 {
                     var buffer = new byte[2048];
                     string data = null;
-                    
+
                     bool isReading = true;
                     while (isReading)
                     {
@@ -59,7 +72,6 @@ namespace Majesty.Communication.Sockets
                             {
                                 isReading = !(data.IndexOf("%END%") > -1);
                             }
-
                         }
                         // TODO All exceptions must remove user from users connected list
                         catch (ArgumentNullException argNullE)
@@ -95,9 +107,9 @@ namespace Majesty.Communication.Sockets
                     {
                         ReceivedPackage(Encoding.UTF8.GetBytes(data));
                     }
-
                 }
             });
+            return Task.CompletedTask;
         }
 
         public void ReceivedPackage(byte[] packageBytes)
@@ -105,7 +117,7 @@ namespace Majesty.Communication.Sockets
             var package = PackageFactory.Create("UserPackage") as UserPackage;
             package.PackageBytes = packageBytes;
             var convertedData = _protocol.ProtocolConvertMessage(package) as SocketUser;
-            _usersConnected.Add(convertedData);
+            _socketUsersConnected.Add(convertedData);
             Console.WriteLine($"{_protocol.GetType().Name} listener received: {convertedData}");
         }
 

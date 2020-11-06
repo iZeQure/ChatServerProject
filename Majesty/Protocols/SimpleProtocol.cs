@@ -1,7 +1,5 @@
 ﻿using Majesty.Packages;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Majesty.Users;
 
 namespace Majesty.Protocols
@@ -15,6 +13,7 @@ namespace Majesty.Protocols
 
         public IUserBase ProtocolConvertMessage(IPackage package)
         {
+            Console.WriteLine("SIMPLE");
             MessageFormatter messageFormatter = new MessageFormatter();
             return messageFormatter.FormatMessage(package);
         }

@@ -21,6 +21,7 @@ namespace Majesty.Protocols
 
         public IUserBase ProtocolConvertMessage(IPackage package)
         {
+            Console.WriteLine("XML");
             throw new NotImplementedException();
         }
     }

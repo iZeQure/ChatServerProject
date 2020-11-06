@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Majesty.Users;
 
 namespace Majesty.Communication
@@ -13,5 +14,6 @@ namespace Majesty.Communication
         
         void SendPackage(IPackage package);
         void ReceivedPackage(byte[] packageBytes);
+        Task HandleConnection();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using Majesty.Protocols;
 
@@ -8,6 +9,7 @@ namespace Majesty.Communication.Sockets
     {
         private readonly Socket _socket;
         private readonly IProtocol _protocol;
+        private readonly List<String> _hej;
 
         public SocketHandlerFactory(Socket socket, IProtocol protocol)
         {
@@ -19,7 +21,7 @@ namespace Majesty.Communication.Sockets
         {
             return handlerObject switch
             {
-                "SocketHandler" => new SocketHandler(_socket, _protocol),
+                "SocketHandler" => new SocketHandler(_socket, _protocol, _hej),
                 _ => throw new NotSupportedException()
             };
         }
