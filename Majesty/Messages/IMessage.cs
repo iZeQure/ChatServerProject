@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Majesty.Messages
+﻿namespace Majesty.Messages
 {
-    interface IMessage
+    public interface IMessage
     {
         byte[] Message { get; }
     }

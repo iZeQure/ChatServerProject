@@ -2,19 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Majesty.Users;
 
 namespace Majesty.Protocols
 {
     class SimpleProtocol : IProtocol
     {
-        public IMessage ConvertMessage(byte[] messageBytes)
+        public byte[] ConvertMessageBack(IMessage message)
         {
             throw new NotImplementedException();
         }
 
-        public byte[] ConvertMessageBack(IMessage message)
+        public IUserBase ProtocolConvertMessage(byte[] messageBytes)
         {
-            throw new NotImplementedException();
+            MessageFormatter messageFormatter = new MessageFormatter();
+            return messageFormatter.FormatMessage(messageBytes);
         }
     }
 }

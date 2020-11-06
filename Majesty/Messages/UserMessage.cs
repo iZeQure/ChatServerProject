@@ -6,9 +6,13 @@ namespace Majesty.Messages
 {
     class UserMessage : IMessage
     {
-        private byte[] _message;
 
-        public byte[] Message { get { return _message; } set { _message = value; } }
+
+        public byte[] Message
+        {
+            get;
+            set;
+        }
 
         public string UsersMessage { get; set; }
     }

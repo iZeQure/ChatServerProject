@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Majesty.Protocols;
+using Majesty.UI;
 using Majesty.Users;
 
 namespace Majesty.Communication.Sockets
@@ -21,20 +22,21 @@ namespace Majesty.Communication.Sockets
 
         public SocketHandler(Socket socket, IProtocol protocol)
         {
-            
+            Console.WriteLine("Connected");   
             _socket = socket;
             _protocol = protocol;
 
             _ = Task.Run(() =>
             {
-                var buffer = new byte[2048];
-                string data = null;
                 bool isConnected = true;
                 int bytesReceived = 0;
 
                 
                 while (isConnected)
                 {
+                    var buffer = new byte[2048];
+                    string data = null;
+                    
                     bool isReading = true;
                     while (isReading)
                     {
@@ -89,12 +91,10 @@ namespace Majesty.Communication.Sockets
 
                     if (bytesReceived > 0)
                     {
-                        var convemrtedData = _protocol.ProtocolConvertMessage(Encoding.UTF8.GetBytes(data));
-                        var socketUser = UserBaseFactory.Create("SocketUser") as SocketUser;
-                        socketUser.NickName = "ASS";
-                        Console.WriteLine($"Message received data: {data} length: {bytesReceived}");
-                        buffer = new byte[2048];
-                        data = null;
+                        var djdjd = Encoding.UTF8.GetBytes(data);
+                        var convertedData = _protocol.ProtocolConvertMessage(djdjd) as SocketUser;
+                        _usersConnected.Add(convertedData);
+                        Console.WriteLine($"{protocol.GetType().Name} listener received: {convertedData}");
                     }
 
                 }

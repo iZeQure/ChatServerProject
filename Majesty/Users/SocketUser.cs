@@ -62,5 +62,10 @@ namespace Majesty.Users
             get => _destinationFrom;
             set => _destinationFrom = value;
         }
+
+        public override string ToString()
+        {
+            return $"{SenderHostname} {DestinationFrom.Address}";
+        }
     }
 }

@@ -90,7 +90,7 @@ namespace Majesty.Communication.Sockets
 
         public void Listen(IProtocol protocol)
         {
-            Console.WriteLine($"Started listening for <{protocol.GetType().Name}> protocol.");
+            Console.WriteLine($"Started listening on {protocol.GetType().Name.ToUpper()}.");
 
             switch (protocol)
             {

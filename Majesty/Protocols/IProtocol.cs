@@ -1,8 +1,11 @@
 ﻿using Majesty.Encryption;
+using Majesty.Messages;
+using Majesty.Users;
 
 namespace Majesty.Protocols
 {
-    interface IProtocol : IConvert
+    interface IProtocol
     {
+        IUserBase ProtocolConvertMessage(byte[] messageBytes);
     }
 }

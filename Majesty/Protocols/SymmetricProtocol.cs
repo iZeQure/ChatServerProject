@@ -3,10 +3,11 @@ using Majesty.Messages;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Majesty.Users;
 
 namespace Majesty.Protocols
 {
-    class SymmetricProtocol : IProtocol, ICrypt
+    class SymmetricProtocol : IProtocol, ICrypt, IConvert
     {
         public IMessage ConvertMessage(byte[] messageBytes)
         {
@@ -24,6 +25,11 @@ namespace Majesty.Protocols
         }
 
         public byte[] Encrypt(byte[] toBeEncrypted)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IUserBase ProtocolConvertMessage(byte[] messageBytes)
         {
             throw new NotImplementedException();
         }
