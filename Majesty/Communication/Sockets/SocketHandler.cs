@@ -19,7 +19,6 @@ namespace Majesty.Communication.Sockets
         static private protected IList<SocketUser> _socketUsersConnected = new List<SocketUser>();
         private protected readonly Socket _socket;
         private protected readonly IProtocol _protocol;
-        private protected readonly List<String> _hej;
 
         public IEnumerable<IUserBase> UsersConnected
         {
@@ -31,11 +30,10 @@ namespace Majesty.Communication.Sockets
         private protected IPackageFactory PackageFactory { get; } = new PackageFactory();
 
 
-        public SocketHandler(Socket socket, IProtocol protocol, List<String> hej)
+        public SocketHandler(Socket socket, IProtocol protocol)
         {
             _socket = socket;
             _protocol = protocol;
-            _hej = hej;
         }
 
         public Task HandleConnection()

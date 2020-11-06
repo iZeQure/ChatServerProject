@@ -16,7 +16,6 @@ namespace Majesty.Communication.Sockets
         private protected Socket _socket;
         private protected int _protocolPort;
         private protected IConnectionHandlerFactory _handlerFactory;
-        private List<String> hej = new List<string>();
 
         public bool BindSocket()
         {
