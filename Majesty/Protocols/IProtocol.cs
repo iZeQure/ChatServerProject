@@ -1,5 +1,5 @@
 ﻿using Majesty.Encryption;
-using Majesty.Messages;
+using Majesty.Packages;
 using Majesty.Users;
 
 namespace Majesty.Protocols

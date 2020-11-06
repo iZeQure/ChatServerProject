@@ -1,4 +1,4 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 using System.Net;
 using Majesty.UI;
 
@@ -8,7 +8,7 @@ namespace Majesty.Users
     {
         private string _nickName;
         private Colors _color;
-        private UserMessage _userMessage;
+        private UserPackage _userPackage;
         private bool _isConnected;
         private string _senderHostname;
         private string _receiverHostname;
@@ -27,10 +27,10 @@ namespace Majesty.Users
             set => _color = value;
         }
 
-        public UserMessage UserMessage
+        public UserPackage UserPackage
         {
-            get => _userMessage;
-            set => _userMessage = value;
+            get => _userPackage;
+            set => _userPackage = value;
         }
 
         public bool IsConnected

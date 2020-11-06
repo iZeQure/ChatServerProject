@@ -1,4 +1,4 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +8,7 @@ namespace Majesty.Protocols
 {
     class SimpleProtocol : IProtocol
     {
-        public byte[] ConvertMessageBack(IMessage message)
+        public byte[] ConvertMessageBack(IPackage package)
         {
             throw new NotImplementedException();
         }

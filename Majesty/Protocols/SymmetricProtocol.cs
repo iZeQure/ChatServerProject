@@ -1,5 +1,5 @@
 ﻿using Majesty.Encryption;
-using Majesty.Messages;
+using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,12 +9,12 @@ namespace Majesty.Protocols
 {
     class SymmetricProtocol : IProtocol, ICrypt, IConvert
     {
-        public IMessage ConvertMessage(byte[] messageBytes)
+        public IPackage ConvertMessage(byte[] messageBytes)
         {
             throw new NotImplementedException();
         }
 
-        public byte[] ConvertMessageBack(IMessage message)
+        public byte[] ConvertMessageBack(IPackage package)
         {
             throw new NotImplementedException();
         }

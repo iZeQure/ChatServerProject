@@ -1,4 +1,4 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -101,13 +101,13 @@ namespace Majesty.Communication.Sockets
             });
         }
 
-        public void ReceivedMessage(IMessage message)
+        public void ReceivedMessage(IPackage package)
         {
             throw new NotImplementedException();
         }
 
 
-        public void SendMessage(IMessage message)
+        public void SendMessage(IPackage package)
         {
             throw new NotImplementedException();
         }

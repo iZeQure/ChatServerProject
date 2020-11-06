@@ -1,4 +1,4 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -11,7 +11,7 @@ namespace Majesty.Communication
     {
         IEnumerable<IUserBase> UsersConnected { get; }
         
-        void SendMessage(IMessage message);
-        void ReceivedMessage(IMessage message);
+        void SendMessage(IPackage package);
+        void ReceivedMessage(IPackage package);
     }
 }

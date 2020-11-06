@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 using System.Text;
-using Majesty.Messages;
+using Majesty.Packages;
 using Majesty.Users;
 
 namespace Majesty.Protocols
@@ -9,7 +9,7 @@ namespace Majesty.Protocols
     class MessageFormatter
     {
         private readonly IUserBaseFactory _userFactory = new UserFactory();
-        private readonly IMessageFactory _messageFactory = new MessageFactory();
+        private readonly IPackageFactory _packageFactory = new PackageFactory();
 
 
         public IUserBase FormatMessage(byte[] messageBytes)
@@ -26,12 +26,12 @@ namespace Majesty.Protocols
             
             // Call the SocketUser factory to create a new IUserBase and cast that to a SocketUser
             var user = _userFactory.Create("SocketUser") as SocketUser;
-            user.UserMessage = _messageFactory.Create("UserMessage") as UserMessage;
+            user.UserPackage = _packageFactory.Create("UserMessage") as UserPackage;
 
             // Set the user.UserMessage.Message to the original message for when we forward the message
             try
             {
-                user.UserMessage.Message = messageBytes;
+                user.UserPackage.PackageBytes = messageBytes;
             }
             catch (Exception e)
             {
