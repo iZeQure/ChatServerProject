@@ -26,7 +26,7 @@ namespace Majesty.Protocols
             
             // Call the SocketUser factory to create a new IUserBase and cast that to a SocketUser
             var user = _userFactory.Create("SocketUser") as SocketUser;
-            user.UserPackage = _packageFactory.Create("UserMessage") as UserPackage;
+            user.UserPackage = _packageFactory.Create("UserPackage") as UserPackage;
 
             // Set the user.UserMessage.Message to the original message for when we forward the message
             try
