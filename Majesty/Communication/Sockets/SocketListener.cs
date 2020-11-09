@@ -24,7 +24,7 @@ namespace Majesty.Communication.Sockets
                 IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAddress = ipHostInfo.AddressList[0];
                 //IPEndPoint localEndPoint = new IPEndPoint(ipAddress, _protocolPort); // Get from hostname
-                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Parse("172.16.21.35"), _protocolPort); // Static
+                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Parse("172.16.21.50"), _protocolPort); // Static
                 
                 
                 Socket listener = new Socket(

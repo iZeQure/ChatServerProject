@@ -39,7 +39,7 @@ namespace Majesty.Communication.Sockets
         public Task HandleConnection()
         {
             Random random = new Random();
-            _ = Task.Run(async () =>
+            _ = Task.Run( () =>
             {
 
                 bool isConnected = true;
