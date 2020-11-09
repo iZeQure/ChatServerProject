@@ -12,20 +12,23 @@ namespace Immortal.Communication
     class CommunicationHandler
     {
         private static List<User> SocketUsers = new List<User>();
+        private readonly Logger _logger = new Logger();
 
         public CommunicationHandler()
         {
-            new Thread(StartListeningOnSimpleProtocol_Thread)
+            var simpleProtocolThread = new Thread(StartListeningOnSimpleProtocol_Thread)
             {
                 Name = "Simple Protocol Thread",
-            }.Start();
+            };
 
-            Console.WriteLine("Waiting for protocol to start..");
+            _logger.Log(LogSeverity.System, "Protocols is starting..");
+
+            simpleProtocolThread.Start();
         }
 
         private protected void StartListeningOnSimpleProtocol_Thread()
         {
-            Console.WriteLine("{0} is now ready.", Thread.CurrentThread.Name);
+            _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("172.16.21.50"), 50001);
@@ -49,7 +52,7 @@ namespace Immortal.Communication
 
                 if (incomingSocketConnection.Connected)
                 {
-                    Console.WriteLine($"Client Connected : {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
+                    _logger.Log(LogSeverity.Info, $"Client Connected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
                     isClientConnected = true;
 
                     if (SocketUsers.Any(ip => ip.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString()))
@@ -75,8 +78,19 @@ namespace Immortal.Communication
                        // Read incoming data from the connected client.
                        while (isClientConnected)
                        {
-                           // Get the number of bytes received from the socket.
-                           int bytesReceived = incomingSocketConnection.Receive(dataBuffer);
+                           int bytesReceived = 0;
+
+                           try
+                           {
+                               // Get the number of bytes received from the socket.
+                               bytesReceived = incomingSocketConnection.Receive(dataBuffer);
+                           }
+                           catch (SocketException)
+                           {
+                               // Set the current socket user to disconnected.
+                               var getClient = SocketUsers.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
+                               if (getClient != null) SocketUsers.Remove(getClient);
+                           }
 
                            // Check if the bytes received isn't zero.
                            if (bytesReceived != 0)
@@ -96,7 +110,7 @@ namespace Immortal.Communication
                            else
                            {
                                isClientConnected = false;
-                               Console.WriteLine($"Client Disconnected : {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
+                               _logger.Log(LogSeverity.Info, $"Client Disconnected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
 
                                // Set the current socket user to disconnected.
                                var getClient = SocketUsers.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
@@ -107,14 +121,43 @@ namespace Immortal.Communication
                        // Check on data if client is connected.
                        if (isClientConnected)
                        {
-                           Console.ForegroundColor = ConsoleColor.Yellow;
-                           Console.WriteLine($"[INF] {DateTimeOffset.UtcNow:hh:mm:ss} Received: {FormatMessage(readableData)}");
-                           Console.ResetColor();
-                           //Console.WriteLine($"Data Received : {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
+                           try
+                           {
+                               var userMessage = FormatMessage(readableData);
 
-                           // Send data to client.
-                           incomingSocketConnection.Send(Encoding.UTF8.GetBytes(readableData));
-                           Console.WriteLine($"Data Sent : {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
+                               _logger.Log(LogSeverity.Info, $"Message Received: {userMessage}");
+
+                               try
+                               {
+
+                                   if (SocketUsers.Any(user => user.IpAddress == userMessage.ReceiverIpAddress && user.IsConnected))
+                                   {
+                                       var getClient = SocketUsers.FirstOrDefault(user => user.IpAddress == userMessage.ReceiverIpAddress);
+                                       if (getClient != null)
+                                       {
+                                           getClient.UserSocket.Send(Encoding.UTF8.GetBytes($"{userMessage.NickName} : {userMessage.ChatMessage}"));
+
+                                           incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message has been delivered."));
+                                       }
+                                       else
+                                           incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message couldn't be delivered."));
+
+                                   }
+                                   else
+                                       incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Client is not online."));
+
+                                   // Send data to client.
+                                   //incomingSocketConnection.Send(Encoding.UTF8.GetBytes(readableData));
+                               }
+                               catch (Exception e)
+                               {
+                                   Console.WriteLine(e.Message);
+                               }
+                           }
+                           catch (Exception)
+                           {
+                               incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message was in wrong format."));
+                           }
                        }
                    }
                });
@@ -123,17 +166,24 @@ namespace Immortal.Communication
 
         private protected SocketMessage FormatMessage(string rawData)
         {
-            // Decodes Data.
-            //string data = Encoding.UTF8.GetString(rawData);
+            try
+            {
+                // Decodes Data.
+                //string data = Encoding.UTF8.GetString(rawData);
 
-            // Define separator.
-            char separator = ':';
+                // Define separator.
+                char separator = ':';
 
-            // Formatted data.
-            string[] formattedData = rawData.Split(separator);
+                // Formatted data.
+                string[] formattedData = rawData.Split(separator);
 
-            // Return new User.
-            return new SocketMessage(formattedData[0], formattedData[1], formattedData[2], formattedData[3], formattedData[4], formattedData[5]);
+                // Return new User.
+                return new SocketMessage(formattedData[0], formattedData[1], formattedData[2], formattedData[3], formattedData[4], formattedData[5]);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
     }
@@ -196,5 +246,46 @@ namespace Immortal.Communication
             _userSocket = userSocket;
             _isConnected = isConnected;
         }
+    }
+
+    class Logger
+    {
+        public void Log(LogSeverity logSeverity, string message)
+        {
+            switch (logSeverity)
+            {
+                case LogSeverity.Info:
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write("[INF]");
+                    break;
+                case LogSeverity.Critical:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write("[CRI]");
+                    break;
+                case LogSeverity.Warning:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write("[WAR]");
+                    break;
+                case LogSeverity.Verbose:
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.Write("[VER]");
+                    break;
+                case LogSeverity.System:
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("[SYS]");
+                    break;
+            }
+            Console.WriteLine($"[{DateTimeOffset.UtcNow:hh:mm:ss}] {message}");
+            Console.ResetColor();
+        }
+    }
+
+    public enum LogSeverity
+    {
+        Info,
+        Critical,
+        Warning,
+        Verbose,
+        System
     }
 }
