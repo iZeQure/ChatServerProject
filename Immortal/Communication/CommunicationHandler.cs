@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
 
 namespace Immortal.Communication
@@ -19,9 +21,9 @@ namespace Immortal.Communication
 
         public CommunicationHandler(IConfiguration configuration)
         {
+            // Set configuration
             _configuration = configuration;
-            var value = _configuration["ServerConfig:server_ip"];
-            Console.WriteLine(value);
+
             var simpleProtocolThread = new Thread(StartListeningOnSimpleProtocol_Thread)
             {
                 Name = "Simple Protocol Thread",
@@ -35,6 +37,7 @@ namespace Immortal.Communication
             _logger.Log(LogSeverity.System, "Protocols is starting..");
 
             simpleProtocolThread.Start();
+            xmlProtocolThread.Start();
         }
 
         private protected void StartListeningOnSimpleProtocol_Thread()
@@ -42,7 +45,7 @@ namespace Immortal.Communication
             _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 50001);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["SimpleProtocol:server_ip"]), int.Parse(_configuration["SimpleProtocol:server_port"]));
 
             // Define socket listener from the endpoint.
             Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -161,7 +164,7 @@ namespace Immortal.Communication
                             try
                             {
                                 // Store the message sent from the client, if fails, the format was incorrect.
-                                var clientMessage = await FormatMessage(readableData);
+                                var clientMessage = await SplitMessage(readableData);
 
                                 // Log the received message.
                                 _logger.Log(LogSeverity.Info, $"Message Received: {clientMessage}");
@@ -224,7 +227,7 @@ namespace Immortal.Communication
                         _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 50002);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["XmlProtocol:server_ip"]), int.Parse(_configuration["XmlProtocol:server_port"]));
 
             // Define socket listener from the endpoint.
             Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -343,8 +346,8 @@ namespace Immortal.Communication
                             try
                             {
                                 // Store the message sent from the client, if fails, the format was incorrect.
-                                var clientMessage = await FormatMessage(readableData);
-
+                                var clientMessage = await FormatMessageFromXml(readableData);
+                                
                                 // Log the received message.
                                 _logger.Log(LogSeverity.Info, $"Message Received: {clientMessage}");
 
@@ -366,7 +369,7 @@ namespace Immortal.Communication
                                                 // Deliver message to receiver client.
                                                 getClient.ClientSocket.Send(
                                                     Encoding.UTF8.GetBytes(
-                                                        $"{clientMessage.NickName} : {clientMessage.ChatMessage}"));
+                                                         FormatMessageToXml(clientMessage).Result));
 
                                                 // Notify client that their message has been delivered.
                                                 incomingSocketConnection.Send(
@@ -401,7 +404,42 @@ namespace Immortal.Communication
             }
         }
 
-        private protected Task<SocketMessage> FormatMessage(string rawData)
+        private protected Task<String> FormatMessageToXml(SocketMessage socketMessage)
+        {
+            try
+            {
+                using (var sw = new StringWriter())
+                {
+                    XmlSerializer ser = new XmlSerializer(typeof(SocketMessage));
+                    ser.Serialize(sw, socketMessage);
+                    return Task.FromResult(sw.ToString());
+                }
+
+                
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+        
+        private protected Task<SocketMessage> FormatMessageFromXml(string rawData)
+        {
+            try
+            {
+                using (var sr = new StringReader(rawData))
+                {
+                    XmlSerializer ser = new XmlSerializer(typeof(SocketMessage));
+                    return Task.FromResult((SocketMessage) ser.Deserialize(sr));
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        private protected Task<SocketMessage> SplitMessage(string rawData)
         {
             try
             {
@@ -425,7 +463,7 @@ namespace Immortal.Communication
         }
     }
 
-    class SocketMessage
+    public class SocketMessage
     {
         private string _nickName;
         private string _senderHostName;

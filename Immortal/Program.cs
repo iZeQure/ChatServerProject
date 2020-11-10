@@ -13,11 +13,10 @@ namespace Immortal
 
         static void Main(string[] args)
         {
-            Console.WriteLine(Directory.GetCurrentDirectory());
             var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json");
             Configuration = builder.Build();
-            Console.WriteLine(Configuration["ServerConfig:server_ip"]);
+            new Program().StartServerAsync().GetAwaiter().GetResult();
         }
 
 
