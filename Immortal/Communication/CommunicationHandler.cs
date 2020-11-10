@@ -21,6 +21,11 @@ namespace Immortal.Communication
                 Name = "Simple Protocol Thread",
             };
 
+            var xmlProtocolThread = new Thread(StartListeningOnXmlProtocol_Thread)
+            {
+                Name = "XML Protocol Thread"
+            };
+
             _logger.Log(LogSeverity.System, "Protocols is starting..");
 
             simpleProtocolThread.Start();
@@ -31,7 +36,7 @@ namespace Immortal.Communication
             _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("172.16.21.50"), 50001);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("172.16.2.30"), 50001);
 
             // Define socket listener from the endpoint.
             Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -46,32 +51,32 @@ namespace Immortal.Communication
             while (true)
             {
                 // Handle incoming connection.
-                Socket incomingSocketConnection = socketListener.Accept();
-
-                bool isClientConnected = false;
-
-                // Check whether a client is connected to the endpoint socket.
-                if (incomingSocketConnection.Connected)
-                {
-                    // Log the client who has connected.
-                    _logger.Log(LogSeverity.Info, $"Client Connected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
-                    isClientConnected = true;
-
-                    // Check ifthe client connected exists.
-                    if (SocketClients.Any(ip => ip.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString()))
-                    {
-                        // Get the client, and set their state to connected is true.
-                        var getClient = SocketClients.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
-                        if (getClient != null) getClient.IsConnected = true;
-                    }
-                    // Add the client to the socket clients.
-                    else
-                        SocketClients.Add(new SocketClient(((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString(), incomingSocketConnection, true));
-                }
+                Socket incomingSocketConnection = socketListener.Accept();                
 
                 // Run new thread on the current socket connection.
                 Task.Run(() =>
                {
+                   bool isClientConnected = false;
+
+                   // Check whether a client is connected to the endpoint socket.
+                   if (incomingSocketConnection.Connected)
+                   {
+                       // Log the client who has connected.
+                       _logger.Log(LogSeverity.Info, $"Client Connected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
+                       isClientConnected = true;
+
+                       // Check ifthe client connected exists.
+                       if (SocketClients.Any(ip => ip.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString()))
+                       {
+                           // Get the client, and set their state to connected is true.
+                           var getClient = SocketClients.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
+                           if (getClient != null) getClient.IsConnected = true;
+                       }
+                       // Add the client to the socket clients.
+                       else
+                           SocketClients.Add(new SocketClient(((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString(), incomingSocketConnection, true));
+                   }
+
                    while (true)
                    {
                        // Initialize a buffer to hold data.
@@ -176,6 +181,11 @@ namespace Immortal.Communication
                    }
                });
             }
+        }
+
+        private protected void StartListeningOnXmlProtocol_Thread()
+        {
+
         }
 
         private protected SocketMessage FormatMessage(string rawData)
