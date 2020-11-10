@@ -11,7 +11,7 @@ namespace Immortal.Communication
 {
     class CommunicationHandler
     {
-        private static List<User> SocketUsers = new List<User>();
+        private static List<SocketClient> SocketClients = new List<SocketClient>();
         private readonly Logger _logger = new Logger();
 
         public CommunicationHandler()
@@ -50,18 +50,23 @@ namespace Immortal.Communication
 
                 bool isClientConnected = false;
 
+                // Check whether a client is connected to the endpoint socket.
                 if (incomingSocketConnection.Connected)
                 {
+                    // Log the client who has connected.
                     _logger.Log(LogSeverity.Info, $"Client Connected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
                     isClientConnected = true;
 
-                    if (SocketUsers.Any(ip => ip.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString()))
+                    // Check ifthe client connected exists.
+                    if (SocketClients.Any(ip => ip.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString()))
                     {
-                        var getClient = SocketUsers.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
+                        // Get the client, and set their state to connected is true.
+                        var getClient = SocketClients.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
                         if (getClient != null) getClient.IsConnected = true;
                     }
+                    // Add the client to the socket clients.
                     else
-                        SocketUsers.Add(new User(((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString(), incomingSocketConnection, true));
+                        SocketClients.Add(new SocketClient(((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString(), incomingSocketConnection, true));
                 }
 
                 // Run new thread on the current socket connection.
@@ -88,8 +93,8 @@ namespace Immortal.Communication
                            catch (SocketException)
                            {
                                // Set the current socket user to disconnected.
-                               var getClient = SocketUsers.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
-                               if (getClient != null) SocketUsers.Remove(getClient);
+                               var getClient = SocketClients.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
+                               if (getClient != null) SocketClients.Remove(getClient);
                            }
 
                            // Check if the bytes received isn't zero.
@@ -113,7 +118,7 @@ namespace Immortal.Communication
                                _logger.Log(LogSeverity.Info, $"Client Disconnected: {((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address}");
 
                                // Set the current socket user to disconnected.
-                               var getClient = SocketUsers.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
+                               var getClient = SocketClients.FirstOrDefault(u => u.IpAddress == ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString());
                                if (getClient != null) getClient.IsConnected = false;
                            }
                        }
@@ -123,26 +128,35 @@ namespace Immortal.Communication
                        {
                            try
                            {
+                               // Store the message sent from the client, if fails, the format was incorrect.
                                var userMessage = FormatMessage(readableData);
 
+                               // Log the received message.
                                _logger.Log(LogSeverity.Info, $"Message Received: {userMessage}");
 
                                try
                                {
-
-                                   if (SocketUsers.Any(user => user.IpAddress == userMessage.ReceiverIpAddress && user.IsConnected))
+                                   // Check if any clients exists and is online, with the provided information sent from a client.
+                                   if (SocketClients.Any(user => user.IpAddress == userMessage.ReceiverIpAddress && user.IsConnected))
                                    {
-                                       var getClient = SocketUsers.FirstOrDefault(user => user.IpAddress == userMessage.ReceiverIpAddress);
+                                       // Get the client to communicate with.
+                                       var getClient = SocketClients.FirstOrDefault(user => user.IpAddress == userMessage.ReceiverIpAddress);
+
+                                       // Check that the client isn't null.
                                        if (getClient != null)
                                        {
-                                           getClient.UserSocket.Send(Encoding.UTF8.GetBytes($"{userMessage.NickName} : {userMessage.ChatMessage}"));
+                                           // Deliver message to receiver client.
+                                           getClient.ClientSocket.Send(Encoding.UTF8.GetBytes($"{userMessage.NickName} : {userMessage.ChatMessage}"));
 
+                                           // Notify client that their message has been delivered.
                                            incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message has been delivered."));
                                        }
+                                       // Notify the client, that their message couldn't be delivered.
                                        else
                                            incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message couldn't be delivered."));
 
                                    }
+                                   // Notify client with a message if the client isn't online or found.
                                    else
                                        incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Client is not online."));
 
@@ -225,25 +239,25 @@ namespace Immortal.Communication
         }
     }
 
-    class User
+    class SocketClient
     {
         private string _ipAddress;
         private Socket _userSocket;
         private bool _isConnected;
 
         public string IpAddress { get => _ipAddress; set => _ipAddress = value; }
-        public Socket UserSocket { get => _userSocket; set => _userSocket = value; }
+        public Socket ClientSocket { get => _userSocket; set => _userSocket = value; }
         public bool IsConnected { get => _isConnected; set => _isConnected = value; }
 
-        public User()
+        public SocketClient()
         {
 
         }
 
-        public User(string ipAddress, Socket userSocket, bool isConnected)
+        public SocketClient(string ipAddress, Socket clientSocket, bool isConnected)
         {
             _ipAddress = ipAddress;
-            _userSocket = userSocket;
+            _userSocket = clientSocket;
             _isConnected = isConnected;
         }
     }
