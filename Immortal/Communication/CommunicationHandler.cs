@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
 
@@ -18,11 +19,14 @@ namespace Immortal.Communication
         private readonly object _socketClientLocker = new object();
         private readonly Logger _logger = new Logger();
         private readonly IConfiguration _configuration;
+        private readonly Crypto _crypto;
 
         public CommunicationHandler(IConfiguration configuration)
         {
             // Set configuration
             _configuration = configuration;
+
+            _crypto = new Crypto(_configuration["CryptoConfig:Symmetrical:key"], _configuration["CryptoConfig:Symmetrical:iv"]);
 
             var simpleProtocolThread = new Thread(StartListeningOnSimpleProtocol_Thread)
             {
@@ -33,11 +37,17 @@ namespace Immortal.Communication
             {
                 Name = "XML Protocol Thread"
             };
+            
+            var symetricProtocolThread = new Thread(StartListeningOnSymetricProtocol_Thread)
+            {
+                Name = "Symtetric Protocol Thread"
+            };
 
             _logger.Log(LogSeverity.System, "Protocols is starting..");
 
             simpleProtocolThread.Start();
             xmlProtocolThread.Start();
+            //symetricProtocolThread.Start();
         }
 
         private protected void StartListeningOnSimpleProtocol_Thread()
@@ -45,7 +55,7 @@ namespace Immortal.Communication
             _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["SimpleProtocol:server_ip"]), int.Parse(_configuration["SimpleProtocol:server_port"]));
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["SimpleConfig:server_ip"]), int.Parse(_configuration["SimpleConfig:server_port"]));
 
             // Define socket listener from the endpoint.
             Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -230,7 +240,193 @@ namespace Immortal.Communication
             _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["XmlProtocol:server_ip"]), int.Parse(_configuration["XmlProtocol:server_port"]));
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["XmlConfig:server_ip"]), int.Parse(_configuration["XmlConfig:server_port"]));
+
+            // Define socket listener from the endpoint.
+            Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            // Bind the endpoint to the socket.
+            socketListener.Bind(endPoint);
+
+            // Listen on communication on the socket.
+            socketListener.Listen(10);
+
+            // Listen for connections..
+            while (true)
+            {
+                // Handle incoming connection.
+                Socket incomingSocketConnection = socketListener.Accept();
+
+                // When the user connects set clientEndPointIpAddress to the ip as a string
+                var clientEndPointIpAddress =
+                    ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString();
+
+                // Run new thread on the current socket connection.
+                Task.Run(async () =>
+                {
+                    bool isClientConnected = false;
+
+                    // Check whether a client is connected to the endpoint socket.
+                    if (incomingSocketConnection.Connected)
+                    {
+                        // Check ifthe client connected exists.
+                        lock (_socketClientLocker)
+                        {
+                            if (SocketClients.Any(ip => ip.IpAddress == clientEndPointIpAddress))
+                            {
+                                // Get the client, and set their state to connected is true.
+                                var getClient =
+                                    SocketClients.FirstOrDefault(u => u.IpAddress == clientEndPointIpAddress);
+                                if (getClient != null)
+                                {
+                                    getClient.ClientSocket.Disconnect(false);
+                                    getClient.IsConnected = true;
+                                    getClient.ClientSocket = incomingSocketConnection;
+                                }
+                            }
+                            // Add the client to the socket clients.
+                            else
+                                SocketClients.Add(new SocketClient(clientEndPointIpAddress, incomingSocketConnection,
+                                    true));
+                        }
+
+                        // Log the client who has connected.
+                        _logger.Log(LogSeverity.Info, $"Client Connected: {clientEndPointIpAddress}");
+                        isClientConnected = true;
+
+                        // Broadcast client states.
+                        await BroadcastClientState(clientEndPointIpAddress);
+                    }
+
+                    while (true)
+                    {
+                        // Initialize a buffer to hold data.
+                        byte[] dataBuffer = new byte[1024];
+
+                        // Define an object to store the data in.
+                        string readableData = null;
+
+                        // Read incoming data from the connected client.
+                        while (isClientConnected)
+                        {
+                            int bytesReceived = 0;
+
+                            try
+                            {
+                                // Get the number of bytes received from the socket.
+                                bytesReceived = incomingSocketConnection.Receive(dataBuffer);
+                            }
+                            catch (SocketException)
+                            {
+                                lock (_socketClientLocker)
+                                {
+                                    // Set the current socket user to disconnected.
+                                    var getClient =
+                                        SocketClients.FirstOrDefault(u => u.IpAddress == clientEndPointIpAddress);
+                                    if (getClient != null) getClient.IsConnected = false;
+                                }
+                            }
+
+                            // Check if the bytes received isn't zero.
+                            if (bytesReceived != 0)
+                            {
+                                // Append the data with the length of bytes received on the specific index.
+                                readableData += Encoding.UTF8.GetString(dataBuffer, 0, bytesReceived);
+
+                                // Check if data contains end of file.
+                                if (readableData.IndexOf("{END}") > -1)
+                                {
+                                    // Remove end of file data.
+                                    readableData = readableData.Replace("{END}", string.Empty);
+                                    break;
+                                }
+                            }
+                            // Client is disconnected.
+                            else
+                            {
+                                isClientConnected = false;
+                                _logger.Log(LogSeverity.Info, $"Client Disconnected: {clientEndPointIpAddress}");
+                                lock (_socketClientLocker)
+                                {
+                                    // Set the current socket user to disconnected.
+                                    var getClient =
+                                        SocketClients.FirstOrDefault(u => u.IpAddress == clientEndPointIpAddress);
+                                    if (getClient != null) getClient.IsConnected = false;
+                                }
+                            }
+                        }
+
+                        // Check on data if client is connected.
+                        if (isClientConnected)
+                        {
+                            try
+                            {
+                                // Store the message sent from the client, if fails, the format was incorrect.
+                                var clientMessage = await FormatMessageFromXml(readableData);
+
+                                // Log the received message.
+                                _logger.Log(LogSeverity.Info, $"Message Received: {clientMessage}");
+
+                                try
+                                {
+                                    lock (_socketClientLocker)
+                                    {
+                                        // Check if any clients exists and is online, with the provided information sent from a client.
+                                        if (SocketClients.Any(user =>
+                                            user.IpAddress == clientMessage.ReceiverIpAddress && user.IsConnected))
+                                        {
+                                            // Get the client to communicate with.
+                                            var getClient = SocketClients.FirstOrDefault(user =>
+                                                user.IpAddress == clientMessage.ReceiverIpAddress);
+
+                                            // Check that the client isn't null.
+                                            if (getClient != null)
+                                            {
+                                                // Deliver message to receiver client.
+                                                getClient.ClientSocket.Send(
+                                                    Encoding.UTF8.GetBytes(
+                                                         FormatMessageToXml(clientMessage).Result));
+
+                                                // Notify client that their message has been delivered.
+                                                incomingSocketConnection.Send(
+                                                    Encoding.UTF8.GetBytes("Message has been delivered."));
+                                            }
+                                            // Notify the client, that their message couldn't be delivered.
+                                            else
+                                                incomingSocketConnection.Send(
+                                                    Encoding.UTF8.GetBytes("Message couldn't be delivered."));
+                                        }
+                                        // Notify client with a message if the client isn't online or found.
+                                        else
+                                            incomingSocketConnection.Send(
+                                                Encoding.UTF8.GetBytes("Client is not online."));
+                                    }
+
+                                    // Send data to client.
+                                    //incomingSocketConnection.Send(Encoding.UTF8.GetBytes(readableData));
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e.Message);
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                incomingSocketConnection.Send(Encoding.UTF8.GetBytes("Message was in wrong format."));
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        private protected void StartListeningOnSymetricProtocol_Thread()
+        {
+            _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
+            
+
+            // Initialzie new endpoint.
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["CryptoConfig:server_ip"]), int.Parse(_configuration["CryptoConfig:server_port"]));
 
             // Define socket listener from the endpoint.
             Socket socketListener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -453,7 +649,7 @@ namespace Immortal.Communication
         private protected Task<SocketMessage> FormatMessageFromXml(string rawData)
         {
             try
-            {
+            { 
                 // Use a new String Reader to hold the rawData
                 using (var sr = new StringReader(rawData))
                 {
@@ -641,5 +837,17 @@ namespace Immortal.Communication
         Warning,
         Verbose,
         System
+    }
+
+    class Crypto
+    {
+        private string _key;
+        private string _iv;
+
+        public Crypto(string key, string iv)
+        {
+            _key = key;
+            _iv = iv;
+        }
     }
 }
