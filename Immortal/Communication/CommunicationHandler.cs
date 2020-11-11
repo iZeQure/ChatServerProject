@@ -64,7 +64,7 @@ namespace Immortal.Communication
 
                 // When the user connects set clientEndPointIpAddress to the ip as a string
                 var clientEndPointIpAddress =
-                    ((IPEndPoint) incomingSocketConnection.RemoteEndPoint).Address.ToString();
+                    ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString();
 
                 // Run new thread on the current socket connection.
                 Task.Run(async () =>
@@ -77,6 +77,9 @@ namespace Immortal.Communication
                         // Log the client who has connected.
                         _logger.Log(LogSeverity.Info, $"Client Connected: {clientEndPointIpAddress}");
                         isClientConnected = true;
+
+                        // Broadcast client states.
+                        await BroadcastClientState(clientEndPointIpAddress);
 
                         // Check ifthe client connected exists.
                         lock (_socketClientLocker)
@@ -97,7 +100,7 @@ namespace Immortal.Communication
                             else
                                 SocketClients.Add(new SocketClient(clientEndPointIpAddress, incomingSocketConnection,
                                     true));
-                        }
+                        }                        
                     }
 
                     while (true)
@@ -224,7 +227,7 @@ namespace Immortal.Communication
 
         private protected void StartListeningOnXmlProtocol_Thread()
         {
-                        _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
+            _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
 
             // Initialzie new endpoint.
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["XmlProtocol:server_ip"]), int.Parse(_configuration["XmlProtocol:server_port"]));
@@ -246,7 +249,7 @@ namespace Immortal.Communication
 
                 // When the user connects set clientEndPointIpAddress to the ip as a string
                 var clientEndPointIpAddress =
-                    ((IPEndPoint) incomingSocketConnection.RemoteEndPoint).Address.ToString();
+                    ((IPEndPoint)incomingSocketConnection.RemoteEndPoint).Address.ToString();
 
                 // Run new thread on the current socket connection.
                 Task.Run(async () =>
@@ -256,10 +259,6 @@ namespace Immortal.Communication
                     // Check whether a client is connected to the endpoint socket.
                     if (incomingSocketConnection.Connected)
                     {
-                        // Log the client who has connected.
-                        _logger.Log(LogSeverity.Info, $"Client Connected: {clientEndPointIpAddress}");
-                        isClientConnected = true;
-
                         // Check ifthe client connected exists.
                         lock (_socketClientLocker)
                         {
@@ -280,6 +279,13 @@ namespace Immortal.Communication
                                 SocketClients.Add(new SocketClient(clientEndPointIpAddress, incomingSocketConnection,
                                     true));
                         }
+
+                        // Log the client who has connected.
+                        _logger.Log(LogSeverity.Info, $"Client Connected: {clientEndPointIpAddress}");
+                        isClientConnected = true;
+
+                        // Broadcast client states.
+                        await BroadcastClientState(clientEndPointIpAddress);
                     }
 
                     while (true)
@@ -347,7 +353,7 @@ namespace Immortal.Communication
                             {
                                 // Store the message sent from the client, if fails, the format was incorrect.
                                 var clientMessage = await FormatMessageFromXml(readableData);
-                                
+
                                 // Log the received message.
                                 _logger.Log(LogSeverity.Info, $"Message Received: {clientMessage}");
 
@@ -404,6 +410,25 @@ namespace Immortal.Communication
             }
         }
 
+        private protected Task BroadcastClientState(string currentClientIpAddress)
+        {
+            Task.Run(() =>
+            {
+                lock (_socketClientLocker)
+                {
+                    foreach (var client in SocketClients)
+                    {
+                        if (client.IsConnected)
+                        {
+                            client.ClientSocket.Send(Encoding.UTF8.GetBytes($"{currentClientIpAddress} is online!"));
+                        }
+                    }
+                }
+            });
+
+            return Task.CompletedTask;
+        }
+
         private protected Task<String> FormatMessageToXml(SocketMessage socketMessage)
         {
             try
@@ -418,15 +443,13 @@ namespace Immortal.Communication
                     // Return the string held in string writer
                     return Task.FromResult(sw.ToString());
                 }
-
-                
             }
             catch (Exception e)
             {
                 throw e;
             }
         }
-        
+
         private protected Task<SocketMessage> FormatMessageFromXml(string rawData)
         {
             try
@@ -437,7 +460,7 @@ namespace Immortal.Communication
                     // Create a new XML Serializer of the SocketMessage type
                     XmlSerializer ser = new XmlSerializer(typeof(SocketMessage));
                     // Return the socket message object using the serializer with the string reader
-                    return Task.FromResult((SocketMessage) ser.Deserialize(sr));
+                    return Task.FromResult((SocketMessage)ser.Deserialize(sr));
                 }
             }
             catch (Exception e)
@@ -575,34 +598,39 @@ namespace Immortal.Communication
 
     class Logger
     {
+        private protected readonly object _logLocker = new object();
+
         public void Log(LogSeverity logSeverity, string message)
         {
-            switch (logSeverity)
+            lock (_logLocker)
             {
-                case LogSeverity.Info:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write("[INF]");
-                    break;
-                case LogSeverity.Critical:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write("[CRI]");
-                    break;
-                case LogSeverity.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.Write("[WAR]");
-                    break;
-                case LogSeverity.Verbose:
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.Write("[VER]");
-                    break;
-                case LogSeverity.System:
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("[SYS]");
-                    break;
-            }
+                switch (logSeverity)
+                {
+                    case LogSeverity.Info:
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write("[INF]");
+                        break;
+                    case LogSeverity.Critical:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("[CRI]");
+                        break;
+                    case LogSeverity.Warning:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("[WAR]");
+                        break;
+                    case LogSeverity.Verbose:
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("[VER]");
+                        break;
+                    case LogSeverity.System:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("[SYS]");
+                        break;
+                }
 
-            Console.WriteLine($"[{DateTimeOffset.UtcNow:hh:mm:ss}] {message}");
-            Console.ResetColor();
+                Console.WriteLine($"[{DateTimeOffset.UtcNow:hh:mm:ss}] {message}");
+                Console.ResetColor(); 
+            }
         }
     }
 
