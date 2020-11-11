@@ -1,19 +1,27 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Majesty.Encryption;
+using Majesty.Users;
 
 namespace Majesty.Protocols
 {
-    class XmlProtocol : IProtocol
+    class XmlProtocol : IProtocol, IConvert
     {
-        public IMessage ConvertMessage(byte[] messageBytes)
+        public IPackage ConvertMessage(byte[] messageBytes)
         {
             throw new NotImplementedException();
         }
 
-        public byte[] ConvertMessageBack(IMessage message)
+        public byte[] ConvertMessageBack(IPackage package)
         {
+            throw new NotImplementedException();
+        }
+
+        public IUserBase ProtocolConvertMessage(IPackage package)
+        {
+            Console.WriteLine("XML");
             throw new NotImplementedException();
         }
     }

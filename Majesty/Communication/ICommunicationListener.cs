@@ -7,8 +7,6 @@ namespace Majesty.Communication
 {
     interface ICommunicationListener<T>
     {
-        IEnumerable<IUserBase> RunTimeUsers { get; }
-
         void Listen(T protocol);
     }
 }

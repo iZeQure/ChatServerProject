@@ -6,6 +6,6 @@ namespace Majesty.Users
 {
     interface IUserBaseFactory
     {
-        IUserBase Create(IUserBase userBase);
+        IUserBase Create(string userObject);
     }
 }

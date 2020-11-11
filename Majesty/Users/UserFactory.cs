@@ -6,11 +6,11 @@ namespace Majesty.Users
 {
     class UserFactory : IUserBaseFactory
     {
-        public IUserBase Create(IUserBase userBase)
+        public IUserBase Create(string userObject)
         {
-            return userBase switch
+            return userObject switch
             {
-                SocketUser => new SocketUser(),
+                "SocketUser" => new SocketUser(),
                 _ => throw new NotSupportedException()
             };
         }

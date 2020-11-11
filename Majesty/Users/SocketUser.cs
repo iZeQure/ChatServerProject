@@ -1,8 +1,6 @@
-﻿using Majesty.Messages;
-using System;
-using System.Collections.Generic;
+﻿using Majesty.Packages;
 using System.Net;
-using System.Text;
+using Majesty.UI;
 
 namespace Majesty.Users
 {
@@ -10,21 +8,64 @@ namespace Majesty.Users
     {
         private string _nickName;
         private Colors _color;
-        private UserMessage _userMessage;
+        private UserPackage _userPackage;
         private bool _isConnected;
+        private string _senderHostname;
+        private string _receiverHostname;
         private IPEndPoint _destinationTo;
-        private IPEndPoint _destiantionFrom;
+        private IPEndPoint _destinationFrom;
+        
+        public string NickName
+        {
+            get => _nickName;
+            set => _nickName = value;
+        }
 
-        public string NickName => _nickName;
+        public Colors Color
+        {
+            get => _color;
+            set => _color = value;
+        }
 
-        public Colors Color => _color;
+        public UserPackage UserPackage
+        {
+            get => _userPackage;
+            set => _userPackage = value;
+        }
 
-        public UserMessage UserMessage => _userMessage;
+        public bool IsConnected
+        {
+            get => _isConnected;
+            set => _isConnected = value;
+        }
 
-        public bool IsConnected => _isConnected;
+        public string SenderHostname
+        {
+            get => _senderHostname;
+            set => _senderHostname = value;
+        }
 
-        public IPEndPoint DestinationTo => _destinationTo;
+        public string ReceiverHostname
+        {
+            get => _receiverHostname;
+            set => _receiverHostname = value;
+        }
 
-        public IPEndPoint DestinationFrom => _destiantionFrom;
+        public IPEndPoint DestinationTo
+        {
+            get => _destinationTo;
+            set => _destinationTo = value;
+        }
+
+        public IPEndPoint DestinationFrom
+        {
+            get => _destinationFrom;
+            set => _destinationFrom = value;
+        }
+
+        public override string ToString()
+        {
+            return $"{SenderHostname} {DestinationFrom.Address}";
+        }
     }
 }

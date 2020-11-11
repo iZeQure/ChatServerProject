@@ -1,10 +1,10 @@
-﻿using Majesty.Messages;
+﻿using Majesty.Packages;
 
 namespace Majesty.Encryption
 {
     interface IConvert
     {
-        IMessage ConvertMessage(byte[] messageBytes);
-        byte[] ConvertMessageBack(IMessage message);
+        IPackage ConvertMessage(byte[] messageBytes);
+        byte[] ConvertMessageBack(IPackage package);
     }
 }

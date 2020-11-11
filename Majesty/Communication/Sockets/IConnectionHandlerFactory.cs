@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Majesty.Communication
+namespace Majesty.Communication.Sockets
 {
     interface IConnectionHandlerFactory
     {
-        IConnectionHandler Create(IConnectionHandler  connectionHandler);
+        IConnectionHandler Create(string  connectionHandlerObject);
     }
 }

@@ -6,6 +6,6 @@ namespace Majesty.Protocols
 {
     interface IProtocolFactory
     {
-        IProtocol Create(IProtocol protocol);
+        IProtocol Create(string protocolObject);
     }
 }

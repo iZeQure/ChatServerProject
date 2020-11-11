@@ -1,19 +1,20 @@
 ﻿using Majesty.Encryption;
-using Majesty.Messages;
+using Majesty.Packages;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Majesty.Users;
 
 namespace Majesty.Protocols
 {
-    class AsymmetricProtocol : IProtocol, ICrypt
+    class AsymmetricProtocol : IProtocol, ICrypt, IConvert
     {
-        public IMessage ConvertMessage(byte[] messageBytes)
+        public IPackage ConvertMessage(byte[] messageBytes)
         {
             throw new NotImplementedException();
         }
 
-        public byte[] ConvertMessageBack(IMessage message)
+        public byte[] ConvertMessageBack(IPackage package)
         {
             throw new NotImplementedException();
         }
@@ -24,6 +25,11 @@ namespace Majesty.Protocols
         }
 
         public byte[] Encrypt(byte[] toBeEncrypted)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IUserBase ProtocolConvertMessage(IPackage package)
         {
             throw new NotImplementedException();
         }
