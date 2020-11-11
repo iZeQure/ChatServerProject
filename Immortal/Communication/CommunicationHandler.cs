@@ -19,14 +19,14 @@ namespace Immortal.Communication
         private readonly object _socketClientLocker = new object();
         private readonly Logger _logger = new Logger();
         private readonly IConfiguration _configuration;
-        private readonly Crypto _crypto;
+        private readonly SymmetricCrypto _symmetricCrypto;
 
         public CommunicationHandler(IConfiguration configuration)
         {
             // Set configuration
             _configuration = configuration;
 
-            _crypto = new Crypto(_configuration["CryptoConfig:Symmetrical:key"], _configuration["CryptoConfig:Symmetrical:iv"]);
+            _symmetricCrypto = new SymmetricCrypto(_configuration["CryptoConfig:Symmetrical:key"], _configuration["CryptoConfig:Symmetrical:iv"]);
 
             var simpleProtocolThread = new Thread(StartListeningOnSimpleProtocol_Thread)
             {
@@ -798,8 +798,10 @@ namespace Immortal.Communication
 
         public void Log(LogSeverity logSeverity, string message)
         {
+            // Lock while priting on the console to avoid doing multiple console actions at once and getting wrong output
             lock (_logLocker)
             {
+                // Set the console color based on the logSeverity
                 switch (logSeverity)
                 {
                     case LogSeverity.Info:
@@ -823,9 +825,9 @@ namespace Immortal.Communication
                         Console.Write("[SYS]");
                         break;
                 }
-
+                // Write the message to the console with time prefix
                 Console.WriteLine($"[{DateTimeOffset.UtcNow:hh:mm:ss}] {message}");
-                Console.ResetColor(); 
+                Console.ResetColor();
             }
         }
     }
@@ -839,12 +841,12 @@ namespace Immortal.Communication
         System
     }
 
-    class Crypto
+    class SymmetricCrypto
     {
         private string _key;
         private string _iv;
 
-        public Crypto(string key, string iv)
+        public SymmetricCrypto(string key, string iv)
         {
             _key = key;
             _iv = iv;
