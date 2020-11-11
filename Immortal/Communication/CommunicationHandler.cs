@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
 
@@ -47,7 +47,7 @@ namespace Immortal.Communication
 
             simpleProtocolThread.Start();
             xmlProtocolThread.Start();
-            //symetricProtocolThread.Start();
+            symetricProtocolThread.Start();
         }
 
         private protected void StartListeningOnSimpleProtocol_Thread()
@@ -424,7 +424,6 @@ namespace Immortal.Communication
         {
             _logger.Log(LogSeverity.System, $"{Thread.CurrentThread.Name} is ready!");
             
-
             // Initialzie new endpoint.
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(_configuration["CryptoConfig:server_ip"]), int.Parse(_configuration["CryptoConfig:server_port"]));
 
@@ -455,6 +454,23 @@ namespace Immortal.Communication
                     // Check whether a client is connected to the endpoint socket.
                     if (incomingSocketConnection.Connected)
                     {
+                        try
+                        {
+                            string xmlCryptoInfo = FormatCryptoInfo(new CryptoInfo("AES",
+                                new[]
+                                {
+                                    _configuration["CryptoConfig:Symmetrical:key"],
+                                    _configuration["CryptoConfig:Symmetrical:iv"]
+                                })).GetAwaiter().GetResult();
+                            // Send cryptoinfo
+                            incomingSocketConnection.Send(Encoding.UTF8.GetBytes(xmlCryptoInfo));
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+
+                        
                         // Check ifthe client connected exists.
                         lock (_socketClientLocker)
                         {
@@ -548,7 +564,7 @@ namespace Immortal.Communication
                             try
                             {
                                 // Store the message sent from the client, if fails, the format was incorrect.
-                                var clientMessage = await FormatMessageFromXml(readableData);
+                                var clientMessage = await FormatMessageFromXml(_symmetricCrypto.Decrypt(readableData).Result);
 
                                 // Log the received message.
                                 _logger.Log(LogSeverity.Info, $"Message Received: {clientMessage}");
@@ -568,10 +584,11 @@ namespace Immortal.Communication
                                             // Check that the client isn't null.
                                             if (getClient != null)
                                             {
+                                                var xmlMessage = FormatMessageToXml(clientMessage).GetAwaiter().GetResult();
+                                                var encryptedMessage = _symmetricCrypto.Encrypt(xmlMessage).GetAwaiter().GetResult();
+                                                
                                                 // Deliver message to receiver client.
-                                                getClient.ClientSocket.Send(
-                                                    Encoding.UTF8.GetBytes(
-                                                         FormatMessageToXml(clientMessage).Result));
+                                                getClient.ClientSocket.Send(Encoding.UTF8.GetBytes(encryptedMessage));
 
                                                 // Notify client that their message has been delivered.
                                                 incomingSocketConnection.Send(
@@ -625,6 +642,27 @@ namespace Immortal.Communication
             return Task.CompletedTask;
         }
 
+        private protected Task<String> FormatCryptoInfo(CryptoInfo cryptoInfo)
+        {
+            try
+            {
+                // Use a new string writer to hold the xml from the serializer
+                using (var sw = new StringWriter())
+                {
+                    // Create a new serializer with the type of CryptoInfo
+                    XmlSerializer ser = new XmlSerializer(typeof(CryptoInfo));
+                    // Serialize the object as xml to the string writer
+                    ser.Serialize(sw, cryptoInfo);
+                    // Return the string held in string writer
+                    return Task.FromResult(sw.ToString());
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+        
         private protected Task<String> FormatMessageToXml(SocketMessage socketMessage)
         {
             try
@@ -841,15 +879,79 @@ namespace Immortal.Communication
         System
     }
 
+    public class CryptoInfo
+    {
+        public string Name
+        {
+            get => _name;
+            set => _name = value;
+        }
+
+        public string[] Keys
+        {
+            get => _keys;
+            set => _keys = value;
+        }
+
+        private string _name;
+        private string[] _keys;
+         
+        public CryptoInfo(string name, string[] keys)
+        {
+            _name = name;
+            _keys = keys;
+        }
+
+        public CryptoInfo()
+        {
+        }
+    }
+    
     class SymmetricCrypto
     {
         private string _key;
         private string _iv;
-
+        private SymmetricAlgorithm _symmetricAlgorithm;
+        
         public SymmetricCrypto(string key, string iv)
         {
             _key = key;
             _iv = iv;
+            
+            _symmetricAlgorithm = Aes.Create();
+            
+            _symmetricAlgorithm.Key = Convert.FromBase64String(_key);
+            _symmetricAlgorithm.IV = Convert.FromBase64String(_iv);
+        }
+
+        public Task<string> Decrypt(string rawDataToDecrypt)
+        {
+            byte[] rawDataToDecryptBytes = Convert.FromBase64String(rawDataToDecrypt);
+            
+            using (var memoryStream = new MemoryStream())
+            {
+                var cryptoStream = new CryptoStream(memoryStream, _symmetricAlgorithm.CreateDecryptor(),
+                    CryptoStreamMode.Write);
+                cryptoStream.Write(rawDataToDecryptBytes, 0, rawDataToDecryptBytes.Length);
+                cryptoStream.FlushFinalBlock();
+
+                return Task.FromResult(Encoding.UTF8.GetString(memoryStream.ToArray()));
+            }
+        }
+        
+        public Task<string> Encrypt(string rawDataToEncrypt)
+        {
+            byte[] rawDataToEncryptBytes = Encoding.UTF8.GetBytes(rawDataToEncrypt);
+            
+            using (var memoryStream = new MemoryStream())
+            {
+                var cryptoStream = new CryptoStream(memoryStream, _symmetricAlgorithm.CreateEncryptor(),
+                    CryptoStreamMode.Write);
+                cryptoStream.Write(rawDataToEncryptBytes, 0, rawDataToEncryptBytes.Length);
+                cryptoStream.FlushFinalBlock();
+
+                return Task.FromResult(Convert.ToBase64String(memoryStream.ToArray()));
+            }
         }
     }
 }
