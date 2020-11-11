@@ -408,10 +408,14 @@ namespace Immortal.Communication
         {
             try
             {
+                // Use a new string writer to hold the xml from the serializer
                 using (var sw = new StringWriter())
                 {
+                    // Create a new serializer with the type of SocketMessage
                     XmlSerializer ser = new XmlSerializer(typeof(SocketMessage));
+                    // Serialize the object as xml to the string writer
                     ser.Serialize(sw, socketMessage);
+                    // Return the string held in string writer
                     return Task.FromResult(sw.ToString());
                 }
 
@@ -427,9 +431,12 @@ namespace Immortal.Communication
         {
             try
             {
+                // Use a new String Reader to hold the rawData
                 using (var sr = new StringReader(rawData))
                 {
+                    // Create a new XML Serializer of the SocketMessage type
                     XmlSerializer ser = new XmlSerializer(typeof(SocketMessage));
+                    // Return the socket message object using the serializer with the string reader
                     return Task.FromResult((SocketMessage) ser.Deserialize(sr));
                 }
             }
